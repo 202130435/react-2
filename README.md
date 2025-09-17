@@ -1,12 +1,409 @@
 # React2
 # 202130435 허동민
 
+## 9월 17일 4주차 수업내용
+### git checkout vs git switch 차이
+- checkout은 브랜치를 이동 하고 파일도 바꿀 수 있습니다. 이 때문에 실수할 위험성이
+있습니다.
+- switch는 브랜치만 이동할 수 있기 때문에 안전하게 사용할 수 있습니다.
+- switch는 이미 작성된 commit을 조작하는 것만 할 수 없는 것이지 나머지 작업, 즉 파
+일을 작성하고, 수정하고, 커밋하는 것은 가능합니다.
+- 특별한 이유가 없다면 switch를 사용하세요.
+
+### git checkout vs git switch 차이
+- 그런데 왜 checkout은 그대로 남아있나?
+- 파일 복원 등 이미 commit된 파일을 조작할 수 있기 때문입니다.
+  특히 git checkout [커밋 해시] 명령으로 특정 commit으로 이동할 수 있습니다.
+- 새 branch를 만드는 명령은 다음 3가지 입니다.
+- 단 branch 명령은 이동은 할 수 없습니다.
+- 또한 switch와 checkout은 branch를 만들기만 할 수는 없고, 만들고 바로 이동합니다.  
+
+<img width="167" height="58" alt="Image" src="https://github.com/user-attachments/assets/60ada1c4-55da-47db-b89f-08b49e752af5" />  
+
+- 참고로 branch 명령은 branch의 생성, 삭제, 확인 등을 할 때 사용합니다.
+- 이미 작성한 코드를 보전하고 싶을 때는 branch를 이용해 보세요.
+
+### 1. Creating a page(페이지 만들기)
+- Next.js는 파일 시스템 기반 라우팅을 사용하기 때문에 폴더와 파일을 사용하여 경로를 정의할 수 있습니다.
+- 이번 장에서는 레이아웃과 페이지를 만들고 서로 연결하는 방법을 설명합니다.
+- page는 특정 경로에서 렌더링되는 UI입니다.
+- page를 생성하려면 app 디렉터리에 page파일을 추가하고, React 컴포넌트를 default
+export합니다. 예를 들어, 인덱스 page(/)를 생성하려면 다음과 같이 합니다.
+- #2장에서 이미 학습한 내용이지만 다시 한 번 작성해 보세요.
+<img width="672" height="137" alt="Image" src="https://github.com/user-attachments/assets/255647a9-f335-4f9d-8ec4-32e081aec39a" />
+```tsx
+export default function Page() {
+  return <h1>Hello Next.js!</h1>
+}
+```
+
+### 2. Creating a layout(레이아웃 만들기)
+- layout은 여러 페이지에서 공유 되는 UI입니다.
+- layout은 네비게이션에서 state 및 상호작용을 유지하며, 다시 렌더링 되지는 않습니다.
+- layout 파일에서 React 컴포넌트의 default export를 사용하여 layout을 정의할 수 있습니다.
+
+- layout 컴포넌트는 page 또는 다른 layout이 될 수 있는 children prop을 허용해야 합니다.
+```
+<Layout>
+  <Page /> 
+</Layout>
+```
+```
+<Layout>
+  <AnotherLayout>
+    <Page />
+  </AnotherLayout>
+</Layout>
+```
+- #children은 컴포넌트 안에 감싸진 요소(컴포넌트)를 의미합니다.
+- #다음 코드에서 <page />는 <Layout />컴포넌트의 children입니다.
+- #layout 컴포넌트를 만들 때 그 안에 들어갈 콘텐츠(children)를 받을 수 있게 해야 하
+고, 그 컨텐츠는 page 또는 layout 컴포넌트가 될 수도 있다는 의미입니다.
+
+### 2. Creating a layout(레이아웃 만들기)
+- 예를 들어, index 페이지를 자식으로 허용하는 레이아웃을 만들려면 app 디렉토리에 layout 파일을 추가합니다.
+```tsx
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body>
+        {/* Layout UI */}
+        {/* Place children where you want to render a page or nested layout */}
+        <main>{children}</main>
+      </body>
+    </html>
+  )
+}
+```
+- 위의 레이아웃은 app 디렉터리의 루트에 정의되어 있으므로 "루트 레이아웃"이라고 힘 니다.
+- 루트 레이아웃은 필수이며, html 및 body 태그를 포함해야 합니다.
+
+### 2. Creating a layout(레이아웃 만들기)
+- #RootLayout component는 반드시 있어야 합니다.
+- #하지만 subpage layout은 없어도 상관 없습니다.
+- #그리고 문서에서는 root layout의 이름을 DashboardLayout이라고 했지만 특별한 이유가 없다면 RootLayout으로 하는 것이 좋습니다.
+- #문서에서는 dashboard 디렉토리를 의미 하는 것 같지만, layout은 결국 routing page를 위한 것이기 때문에 RootLayout으로 명명하는 것이 좋습니다.
+
+### 3. Creating a nested route(중첩 라우트 만들기)
+- 중첩 라우트는 다중 URL 세그먼트로 구성된 라우트입니다.
+- 예를 들어, /blog/[slug]경로는 세 개의 세그먼트로 구성됩니다.
+  -/(Root Segment)
+  -blog (Segment)
+  -[slug] (Leaf Segment)
+[Next.js에서]
+- 폴더는 URL 세그먼트에 매핑되는 경로 세그먼트를 정의하는데 사용됩니다. #즉 폴더가 URL 세그먼트가 된다는 의미 입니다.
+- 파일(예: page 및 layout)은 세그먼트에 표시되는 UI를 만드는 데 사용됩니다. 폴더를 중첩하면 중첩된 라우트를 만들 수 있습니다.
+- URL Segment URL에서 특정 리소스에 대한 경로를 구성하는 부분을 의미
+
+### 3. Creating a nested route(중첩 라우트 만들기)
+- 예를 들어 /blog에 대한 경로를 추가하려면 app 디렉터리에 blog라는 폴더를 만듭니다.
+- 그리고/blog에 공개적으로 액세스할 수 있도록 하려면 page.tsx 파일을 추가합니다.  
+<img width="682" height="239" alt="Image" src="https://github.com/user-attachments/assets/6db10bd0-3291-4777-8df0-52a9695b005c" />
+
+```tsx
+// Dummy imports
+import { getPosts } from '@/lib/posts'
+import { Post } from '@/ui/post'
+ 
+export default async function Page() {
+  const posts = await getPosts()
+ 
+  return (
+    <ul>
+      {posts.map((post) => (
+        <Post key={post.id} post={post} />
+      ))}
+    </ul>
+  )
+}
+```  
+
+### 문서의 코드를 복사하면 오류가 나옵니다.
+- #@/lib/posts와 @/ui/post를 작성하지 않았기 때문에 오류가 발생합니다.
+- #다음과 같이 수정해 주세요.
+```tsx
+export default function Page() {
+  return (
+    <ul>
+      <li>Post 1</li>
+      <li>Post 2</li>
+      <li>Post 3</li>
+
+    </ul>
+  )
+}
+```
+- #문서에서 별도의 library를 사용한 것은 blog폴더 하나에는 하나의 URL 세그먼트만 존
+재하지만, 많은 양의 post를 각기 다른 주소로 호출하기 위한 동적 라우팅인 [slug]를 설명하기 위해서 입니다.
+- #우선 blog page에서는 list를 바로 뿌려주고, [slug]는 dummy data를 이용해서 테스트 하겠습니다.
+
+### 3. Creating a nested route(중첩 라우트 만들기)
+- 폴더를 계속 중첩하여 중첩된 경로를 만들 수 있습니다.
+- 예를 들어 특정 블로그 게시물에 대한 경로를 만들려면 blog 안에 새 [slug] 폴더를 만 들고 page 파일을 추가합니다.
+- 폴더 이름을 대괄호(예: [slug])로 묶으면 데이터에서 여러 페이지를 생성하는데 사용
+되는 동적 경로 세그먼트가 생성됩니다. 예: 블로그 게시물, 제품 페이지 등.
+<img width="1920" height="824" alt="Image" src="https://github.com/user-attachments/assets/f8454cd6-8518-4d79-83e3-9c37199d96fc" />
+
+```tsx
+function generateStaticParams() {}
+ 
+export default function Page() {
+  return <h1>Hello, Blog Post Page!</h1>
+}
+```
+
+### [slug]의 이해
+- #slug는 사이트의 특정 페이지를 쉽게 읽을 수 있는 형태로 식별하는 URL의 일부입니다.
+- 신문이나 잡지 점에서 핵심 코미를 포함하는 단어만을 조합해 간단 정료하거 제목을 작성하는 것을 슐러그라고 하는 것에서 유래 하였습니다.
+- #문서의 경로/blog/[slug]의 [slug] 부분은 불러올 데이터의 key를 말합니다.
+- #따라서 데이터에는 slug key가 반드시 있어야 합니다.
+<img width="367" height="87" alt="Image" src="https://github.com/user-attachments/assets/e5b477de-dea9-4b5c-973c-1499ce21026f" />
+
+- #예를 들어 첫 번째 데이터를 호출하는 경우라면 /blog/nextjs 라고 호출합니다.
+- #먼저 더미 데이터를 만들고 실습을 해보도록 하겠습니다.
+- [slug]는 반드시 slug일 필요는 없습니다. 단, [foo]라고 했다면 데이터에 반드시 foo key(필드)가 있어야 합니다.
+
+### # [slug]||||
+- #디렉토리 구조는 다음과 같습니다. 문서에도 구조가 나와 있습니다.
+<img width="165" height="69" alt="Image" src="https://github.com/user-attachments/assets/603bebd8-7bb1-45c0-911c-d3c6e6f0d6b7" />
+
+- #/blog/[slug]/page.tsx
+<img width="286" height="161" alt="Image" src="https://github.com/user-attachments/assets/ede6f3dc-229a-425d-abdb-2fcb90bfac12" />
+
+### [slug]의 이해
+- #코드 작성이 완료되면 /blog/[slug]로 접속해 봅니다.
+- #여기서 [slug]는 nextjs, routing, ssr-ssg, dynamic-routes에 해당합니다.
+- #동작은 정상적으로 되지만 한가지 오류가 발생합니다.
+Error: Route "/blog/[slug]" used "params.slug"- "params" should be awaited before using its properties.
+- #이 오류는 Next.js App Router에서 params가 비동기(async) 객체처럼 다뤄지는 경우 발생합니다.
+- #Next.js 14.2 이후로 params와 searchParams는 내부적으로 Promise 기반 객체일 수 있어서, 바로 쓰면 안 되고 await하거나 props의 구조 분해에서 미리 await해야 합니다. #현재 실습 중인 버전은 15.x이기 때문에 오류가 발생하는 것입니다.
+- #수정한 코드는 다음과 같습니다.
+
+### [slug]의 이해 
+- #수정한 코드는 다음과 같습니다. 서버를 재 실행해야 정상 동작할 수도 있습니다.
+<img width="382" height="238" alt="Image" src="https://github.com/user-attachments/assets/6d90b08e-f742-44f7-bbd3-fea4d4a5736f" />
+
+### # [slug]의 이해
+```export default async function Posts({ params }: { params: { slug: string } }) {
+const { slug } = await params; // params 예제
+const post posts.find((p)p.slugslug);
+}
+```
+- #다음은 3, 4, 5 라인의 의미에 관해서 설명입니다.
+- #async function: 함수를 async로 선언해야 내부에서 await를 쓸 수 있습니다.
+- #await을 사용하는 이유는 서버의 데이터를 읽어올 때 타임 딜레이에 의한 오류를 방지 하기 위해서 입니다.
+  - RESTful API HTTP 프로토콜을 사용하여 자원을 식별하고 조작하는 통신 규칙을 정의
+- #매개변수 구조({ params }): Next.js가 페이지를 호출할 때는 props 객체로 {params.
+searchParams, ... } 같은 값을 넘겨주는데, 여기서 params만 구조 분해로 받고 있습니다.
+- #타입 { params: Promisec{ slug: string }> }: Typescript 타입 선언입니다.
+- #params가 Promise(비동기 값)임을 명시하고 있습니다.
+- #최신 Next.js (14.2+)에서는 내부적으로 params를 비동기로 다루고 있습니다.
+
+### # [slug]의 이해
+```tsx
+export default async function Posts({ params }: { params: { slug: string } })
+ { const { slug } = await params; // params
+const post = posts.find((pp.slugmslug);
+ }
+```
+- #4번째 라인 const { slug} = await params;
+- #await params params가 가리키는 Promise를 해제(resolve) 해서 실제 객체 { slug:"..." }를 얻습니다.
+- #const { slug }....는 그 객체에서 slug 프로퍼티만 꺼내 오는 구조 분해 할당입니다. 
+- #풀어 쓰면 다음과 같은 의미 입니다
+```
+const resolved = await params;
+const slug resolved.slug:
+```
+
+### # [slug]의 이해
+```tsx
+export default async function Posts({ params }: { params: { slug: string } })
+ { const { slug } = await params; // params
+const post = posts.find((pp.slugmslug);
+ }
+```
+- #5번째 라인 const post = posts.find((p) p.slug === slug);
+- #posts는 배열입니다. (예: 더미 데이터나 DB에서 가져온 결과)
+- #.find()는 조건에 맞는 첫 번째 요소를 반환합니다. 못 찾으면 undefined를 반환합니다.
+- #여기서는 D.slug가 URL에서 온 slug와 일치하는 게시글을 찾아 post에 할당합니다.
+- #.find는 찾는 것이 없으면 undefined이기 때문에 이후에 post.title 같은 접근을 하면 런타임 에러가 납니다.
+- #따라서 게시글이 존재 하는지를 검사할 필요가 있습니다.
+- #문서에서는 없기 때문에 이부분을 추가한 것입니다. (lib에 별도로 구현했을 수는 있음)
+```
+if (post) {
+// 404 처리: 사용자 친화적 메시지 또는 Next.js notfound
+return <h1>게시글을 찾을 수 없습니다!</h1>;
+}
+```
+
+### [slug]의 이해
+- #데이터 소스가 크다면 find는 O(n)이므로 DB 쿼리로 바꿔야 합니다.
+  : 0(n)은 알고리즘의 시간 복잡도가 입력 데이터의 크기 n에 비례하여 시간이나 메모리
+  사용량이 선형적으로 증가하는 것을 의미합니다.
+- #앞의 코드에서는 Promise...>를 사용하지 않아도 오류 없이 동작했습니다.
+- #하지만 params가 동기식처럼 보이지만 사실은 비동기식이라는 것을 좀더 명확히 하기 위해 사용합니다. 코드의 가독성이 좋습니다.
+- #또 한가지 Promise를 명시해주면 await을 깜빡했을 때 TypeScript가 이를 잡아줍니다.
+- #결론적으로 오류와 상관없이 Promise 사용을 권장합니다.
+
+### #/blog/page.tsx를 수정 해보자
+- #앞에서 리스트로 출력만 했던 코드를 수정해 보겠습니다.
+- #더미 데이터를 map 함수를 이용해서 출력해 줍니다. (구조 분해 할당)
+
+```tsx
+import { posts } from "Bests
+export default sync function Page() {
+  return (
+    <ol>
+      {posts.map{(post)=> (
+        <li key={post.slug}>
+          {post.title} / {post.content}
+        </li>
+    )}}
+    </ol>
+  )
+}
+```
+1. Next.js 소개/Next.js는 React기반의 풀스택 프레임워크입니다.
+2. App Router 알아보기/Next.js부터는 App Router가 도입되었습니다.
+3. SSRvsSSG/서버사이드 렌더링과 전정적 사이트 생성의 차ㄹ이를 알아봅니다.
+4. 동적 라우팅 / Next.js에서 [slug]를 발표한 라우팅 방식입니다.
+- #출력을 확인해 봅니다.
+- #보통은 /blog/page.tsx는 포스팅 리스트를 출력하고, /blog/[slug]/page.tsx는 상세 페이지를 출력하는 역할을 합니다.
+
+### 4. Nesting layouts (중첩 레이아웃)
+- 기본적으로 폴더 계층 구조의 레이아웃도 중첩되어 있습니다.
+- 즉, 자식 prop을 통해 자식 레이아웃을 감싸게 됩니다.
+- 특정 경로 세그먼트(폴더) 안에 레이아웃을 추가하여 레이아웃을 중첩할 수 있습니다.
+- 예를 들어 blog 경로에 대한 레이아웃을 만들려면 blog 폴더 안에 새 레이아웃 파일을 추가합니다.
+<img width="1920" height="922" alt="Image" src="https://github.com/user-attachments/assets/33235ae7-c069-4164-b55a-62f8e3233e21" />
+
+```tsx
+export default function BlogLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return <section>{children}</section>
+}
+```
+
+### 5. Creating a dynamic segment(동적 세그먼트 만들기)
+동적 세그먼트를 사용하면 데이터에서 생성된 경로를 만들 수 있습니다.
+• 예를 들어, 각 blog 게시물에 대한 경로를 직접 만드는 대신, 동적 세그먼트를 만들어 블로그 게시물 데이터를 기반으로 경로를 생성할 수 있습니다.
+• 동적 세그먼트를 생성하려면 세그먼트(폴더) 이름을 대괄호로 묶습니다. (예: [segmentName]）
+예를 들어, app/blog/[slug]/page.tsx 경로에서 [slug]는 동적 세그먼트입니다.
+```tsx
+export default async function BlogPostPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
+  const post = await getPost(slug)
+ 
+  return (
+    <div>
+      <h1>{post.title}</h1>
+      <p>{post.content}</p>
+    </div>
+  )
+}
+```
+
+### 5. Creating a dynamic segment(동적 세그먼트 만들기)
+- 동적 세그먼트 및 매개변수 props에 대해 자세히 알아보세요.
+- 동적 세그먼트 내에 중첩된 레이아웃도 매개변수 props에 액세스할 수 있습니다.
+
+### 6. Rendering with search params(검색 매개변수를 사용한 렌더링)
+- 서버 컴포넌트 page에서는 searchParams prop을 사용하여 검색 매개변수에 액세스할 수 있습니다.
+```
+export default async function Page({
+  searchParams,
+}: { 
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  const filters = (await searchParams).filters
+}
+```
+- searchParams를 사용하면 해당 페이지는 동적 렌더링 (dynamic rendering)으로 처리됩니다.
+- 왜냐하면 URL의 쿼리 파라미터(search parameters)를 읽기 위해 요청(request)이 필요하기 때문입니다.
+- 클라이언트 컴포넌트는 useSearchParams Hook을 사용하여 검색 매개변수를 읽을 수 있습니다.
+- 정적 렌더링과 동적 렌더링에서 useSearchParams를 사용하는 방법에 대해 자세히 알아보세요.
+
+### 6. Rendering with search params(검색 매개변수를 사용한 렌더링)
+- 무엇을 언제 사용해야 하나요?
+  - 페이지에 대한 데이터를 로드하기 위해 검색 매개변수가 필요한 경우(예: 페이지 매김, 데이터베이스에서 필터링) searchParams prop을 사용합니다.
+  - 검색 매개변수가 클라이언트에서만 사용되는 경우(예: props를 통해 이미 로딩된 목록을 필터링하는 경우) useSearchParams를 사용합니다.
+  - 콜백이나 이벤트 핸들러에서 new URLSearchParams(window.location.search)를 사용하여 리랜더링을 하지 않고도 검색 매개변수를 읽어올 수 있습니다.
+- #앞에서 살펴본 params와 searchParams의 차이는 다음과 같습니다.
+- #params는 동적 세그먼트 [slug]에서 가져오는 값으로 URL의 path 부분에 포함된 데이터 를 의미합니다.
+- #searchParams 는 query string에서 가져오는 값으로 URL의 ? 이후에 붙는 key=value 데이터를 의미합니다.
+
+### searchParams란?
+- #URL의 쿼리 문자열(Query String)을 읽는 방법입니다.
+- #예시 URL: /products?category=shoes&page=2
+- #여기서 category=shoes, page=2가 search parameters입니다.
+- #Next.js의 App Router에서 searchParams는 다음과 같이 사용할 수 있습니다.
+```js
+// app/products/page.js
+export default function ProductsPage({ searchParams }) {
+  return <p>카테고리: {searchParams.category}</p>
+}
+```
+- searchParams는 컴포넌트의 props로 전달되며, 내부적으로는 URLSearchParams처럼 작동합니다.
+- 실습은 뒤에서 하겠습니다.
+
+### # 왜 "동적 렌더링"이 되는가?
+- Next.js에서 페이지는 크게 정적(static) 또는 동적(dynamic)으로 렌더링될 수 있습니다.
+- `searchParams`는 요청이 들어와봐야 값을 알 수 있기 때문에, Next.js는 이 페이지를 정적으로 미리 생성할 수 없고, 요청이 올 때마다 서버 렌더링해야 합니다.
+- 따라서 해당 페이지는 자동으로 동적 렌더링(dynamic rendering)으로 처리됩니다.
+- 즉, `searchParams`를 사용하는 순간 Next.js는  
+  "이 페이지는 요청이 들어와야 동작하네? → 그러면 정적으로 미리 만들 수 없겠다!"라고 판단합니다.
+ 🔁 동적 렌더링 vs 정적 렌더링 비교
+
+| 항목            | 정적 렌더링 (Static)            | 동적 렌더링 (Dynamic)             |
+|-----------------|----------------------------------|-----------------------------------|
+| 예시            | /about, /blog/[id] 등            | /products?page=2 와 같이 동적 URL |
+| 생성 시점       | 빌드 시 생성                     | 요청 시 서버에서 생성             |
+| searchParams 사용 | 불가능                           | 가능                              |
+
+### # searchParams 실습
+- #파일 구조는 다음과 같습니다.
+📁 app/
+ ┗ 📁 products/
+    ┗ 📄 page.tsx
+
+- #디렉토리와 파일을 다음 구조와 같이 만듭니다.
+
+```tsx
+// src > app > products > page.tsx
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ id?: string; name?: string }>
+}) {
+  const { id = "no id", name = "non name" } = await searchParams;
+
+  return (
+    <>
+      <h1>🛍️ Products Page</h1>
+      <p>🆔 id : {id}</p>
+      <p>🧑‍💼 name : {name}</p>
+    </>
+  );
+}
+```
+
 ## 9월 10일 3주차 수업내용
 ### 용어 정의
 이 장부터 이후에 사용될 몇가지 용어에 대한 설명입니다.
 - 원문에는 route라는 단어가 자주 등장하고, 사전적 의미로는 경로입니다.
 - route(라우트)는 '경로를 의미하고, routing(라우팅)은 경로를 찾아가는 과정을 의미합니다.
-- 그런데 path도 경로'로 번역하기 때문에의 구별을 위해 대부분 routing(라우팅)으로 번역했습니 다.
+- 그런데 path도 경로'로 번역하기 때문에의 구별을 위해 대부분 routing(라우팅)으로 번역했습니다.
 - directory와 folder는 특별한 구분 없이 나옵니다.
 - 최상위 폴더의 경우 directory로 하위 폴더는 folder로 쓰는 경우가 많지만 꼭 그렇지는 않습니다.
 - directory와 folder는 OS에 따라 구분되는 용어이기 때문에 같은 의미로 이해하면 됩니다. 
