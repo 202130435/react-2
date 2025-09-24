@@ -1,6 +1,320 @@
 # React2
 # 202130435 허동민
 
+## 9월 24일 5주차 수업내용
+### searchParams란?
+- #URL 쿼리 문자열(Query String)을 읽는 방법입니다.
+- #예시 URL:
+/products?category=shoes&page=2
+- #여기서 category=shoes, page=2가 search parameters입니다.
+- #Next.js의 App Router에서 searchParams는 다음과 같이 사용할 수 있습니다.
+```js
+//app/products/page.js
+export default function productspage({ searchParams }) {
+return <p>카테고리: {searchParams.category}</p>;
+}
+```
+- #searchParams는 컴포넌트의 props로 전달되며, 내부적으로는 URLSearchParams 처럼 작 동합니다.
+- #실습은 뒤에서 하겠습니다.
+
+### 왜 "동적 렌더링"이 되는가?
+- #Next.js에서 페이지는 크게 정적(static) 또는 동적(dynamic)으로 렌더링될 수 있습니 다.
+- #searchParams는 요청이 들어와야만 값을 알 수 있기 때문에, Next.js는 이 페이지를 정 적으로 미리 생성할 수 없고, 요청이 올 때마다 새로 렌더링해야 합니다.
+- #따라서 해당 페이지는 자동으로 동적 렌더링(dynamic rendering)으로 처리됩니다.
+- #즉, searchParams를 사용하는 순간 Next.js는
+  "이 페이지는 요청이 들어와야 동작하네? 그럼 정적으로 미리 만들 수 없겠다!" 라고 판단합니다.
+- #동적 렌더링 vs 정적 렌더링 비교  
+<img width="391" height="77" alt="Image" src="https://github.com/user-attachments/assets/92b15b91-f341-4415-9b11-4e2509ad5db7" />
+
+### #searchParams 실습
+- #파일 구조는 다음과 같습니다.
+- #디렉토리와 파일을 다음 구조와 같이 만듭니다.
+app/  
+  Lproducts/  
+    Lpage.tsx  
+- #라인 1: 함수 선언 합니다.
+- #라인 2~5: 2. 매개 변수 / 4. 타입 선언, searchParams는 Promise 객체 입니다.
+
+```tsx
+export default async function ProductsPage({
+  searchParams
+}: {
+  searchParams: Promise<{ id?: string: name?: string }>
+}) {
+  const { id="non id", name = "non name" } = await searchParams;
+  return (
+    <div>
+      <h1>Products Page</h1>
+      <p>id: {id}</p>
+      <p><name>: {name}</p>
+    </div>
+  )
+}
+```
+
+### #[slug]의 이해
+- #데이터 소스가 크다면 find는 0(n)이므로 DB 쿼리로 바꿔야 합니다.
+  : O(n)은 알고리즘의 시간 복잡도가 입력 데이터의 크기 n에 비례하여 시간이나 메모리
+사용량이 선형적으로 증가하는 것을 의미합니다.
+- #앞의 코드에서는 Promise... >를 사용하지 않아도 오류 없이 동작했습니다.
+- #하지만 params가 동기식처럼 보이지만 사실은 비동기식이라는 것을 좀더 명확히 하기 위해 사용합니다. 코드의 가독성이 좋습니다.
+- #또 한가지 Promise를 명시해주면 await을 깜빡했을 때 TypeScript가 이를 잡아줍니다.
+- #결론적으로 오류와 상관없이 Promise 사용을 권장합니다.
+
+### #searchParams 실습 (코드 설명)
+- #라인 6: await를 쓰면 그 Promise가 끝나고, 실제 값(객체)이 반환됩니다.
+// URL:/productstid-fookname-bar 
+await searchParams;
+// : { id: "foo", name: "bar" }
+- #비구조화 할당(object destructuring)으로 객체에서 속성을 꺼내 옵니다.
+- #라인 6의 나머지 왼쪽 부분은 초기값을 지정한 것입니다.
+```tsx
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  const filters = (await searchParams).filters
+}
+```
+
+### 7. Linking between pages(페이지 간 연결)
+- <Link> 컴포넌트를 사용하여 경로 사이를 탐색 할 수 있습니다.
+- <Link>는 HTML <a> 태그를 확장하여 prefetching 및 client-side navigation 기능을 제공하는 Next.js의 기본제공 컴포넌트입니다.
+  - Prefetching은 사용자가 해당 경로로 이동하기 전에 백그라운드에서 해당 경로를 loading 하는 프로세스입니다.
+- 예를 들어, 블로그 글 목록을 생성하려면 next/link에서 <Link>를 가져와서 컴포넌트에 href prop을 전달합니다.
+```tsx
+import Link from 'next/link'
+ 
+export default async function Post({ post }) {
+  const posts = await getPosts()
+ 
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.slug}>
+          <Link href={`/blog/${post.slug}`}>{post.title}</Link>
+        </li>
+      ))}
+    </ul>
+  )
+}
+```
+
+### 7. Linking between pages(페이지 간 연결)
+알아두면 좋아요:
+- <Link>는 Next.js에서 경로를 탐색하는 기본 방법입니다.
+- 보다 고급 탐색을 위해 useRouter Hook을 사용할 수도 있습니다.
+
+### #Link 컴포넌트 실습
+- #앞에서 만든 blog page와 더미 데이터를 사용해서 Link 실습을 진행합니다.
+- #blog page를 열면 다음과 같이 각각의 목록에 링크를 추가해 보세요.
+
+<img width="110" height="146" alt="Image" src="https://github.com/user-attachments/assets/6f2ce489-66fd-4316-b10d-142d59cbccea" />  
+
+- #다음으로 모든 페이지에서 확인할 수 있는 Home과 Blog로 가는 메뉴를 만들어 보세요.
+
+### #Link 컴포넌트 실습
+# /blog/page.tsx
+```tsx
+import Link from "next/link";
+import { posts } from "../(marketing)/blog/[slug]/posts";
+
+export default async function BlogPage3() {
+    return (
+        <div>
+            <h1>블로그3 목록</h1>
+            <ul>
+                {posts.map((post) => (
+                    <li key={post.slug}>
+                        <Link href={`/blog3/${post.slug}`}>{post.title}</Link>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+```
+
+### #Route 방식 비교
+1. React vs Next.js 라우팅 방식의 차이
+<img width="377" height="85" alt="Image" src="https://github.com/user-attachments/assets/5be0f550-d6ed-47ee-93df-372fd1a60552" />
+
+- #React는 기본적으로 라우팅 기능이 없기 때문에, 직접 라우터 라이브러리를 설치해서 라우팅을 설정해야 합니다.
+- #Next.js는 자체적으로 라우팅 시스템을 내장하고 있습니다.
+
+### #Route 방식 비교
+2. Next.js의 라우팅 방식: Pages Router vs App Router
+
+<img width="379" height="107" alt="Image" src="https://github.com/user-attachments/assets/669800f5-33be-4619-bd4e-619296ea1d2b" />
+
+- pages router 구조 예시 
+pages/
+  ㄴ index.tsx -> /
+  ㄴ about.tsx -> /about
+  ㄴ blog/[slug].tsx -> /blog/hello, /blog/nextis-routing 등
+- √export default function Page() 형식으로 구성
+- √각 파일은 하나의 페이지 컴포넌트
+- SSR/SSG 함수는 getStaticProps, getServerSideProps 등으로 처리
+
+### # Route 방식 비교
+
+app router 구조 예시
+
+├── layout.tsx      - 모든 페이지에 공통 적용될 레이아웃  
+├── page.tsx        - /  
+├── about/  
+│   └── page.tsx    - /about  
+├── blog/  
+│   ├── layout.tsx  - /blog에 공통 적용  
+│   └── [slug]/  
+│       └── page.tsx - /blog/hello 등  
+
+
+✅ page.js: 각 세그먼트의 페이지
+✅ layout.js: 해당 세그먼트 이하의 모든 페이지에 공통 레이아웃 적용
+✅ 추가 기능: loading.js, error.js, not-found.js, route groups, parallel routes 등
+
+### 📌 Route 방식 비교
+✅ App Router의 강력한 기능들
+기능	설명
+중첩 레이아웃	여러 레벨의 layout.js 파일을 통해 레이아웃을 계층적으로 구성 가능
+서버 컴포넌트 지원	서버에서만 렌더되는 컴포넌트로 성능 최적화 가능
+(React Server Component)
+로딩 UI	특정 경로에 한정된 로딩용 loading.js 제공
+에러 UI	특정 경로에 한정된 에러용 error.js 제공
+병렬 라우팅	하나의 경로 안에서 탭 같은 독립적인 뷰를 병렬로 렌더링 가능
+✅ 프로젝트 별 추천 방식
+상황	추천 방식
+새 프로젝트 시작	App Router (app 디렉토리 기반)
+기존 프로젝트 유지보수	pages/ 계속 사용 가능하므로 굳이 마이그레이션 필요 없음
+React에 손을 자주 넣어야 하는 경우	react-router-dom 사용하는 것이 좋음
+(Next.js 라우팅 의존성 없음)
+
+### 📝 Introduction
+- Next.js에서 경로는 기본적으로 서버에서 렌더링됩니다.
+- 즉, 클라이언트는 새 경로를 표시하기 전에 서버의 응답을 기다려야 하는 경우가 많습니다.
+- Next.js에는 prefetching, streaming, 그리고 client-side transitions(클라이언트 사이드 전환)
+기능이 기본 제공되어 느린 네트워크에서도 속도와 부드러운 반응성이 뛰어납니다.
+🔎 자세한 내용은 다음 장에서 설명합니다.
+🎯 이번 장에서는
+- Next.js에서 네비게이션에 접목되는 방식, 호출 구조와
+느린 네트워크에 맞춰 네비게이션을 최적화하는 방법을 설명합니다.
+
+### How navigation works(네비게이션 작동 방식)
+
+- Next.js에서 네비게이션이 어떻게 작동하는지 이해하려면 다음 개념을 익숙해지는 것이 좋습니다.
+- Server Rendering(서버 렌더링)
+- Prefetching(프리패칭)
+- Streaming(스트리밍)
+- Client-side transitions(클라이언트 측 전환)
+
+### 1-1. Server Rendering(서버 렌더링)
+- Next.js에서 렌더링되는 페이지는 기본적으로 React 서버 컴포넌트입니다. (React문서 참조)
+- 초기 네비게이션 및 추후 네비게이션 시에, 서버 컴포넌트 페이지는 클라이언트로 전송되기 전에 서버에서 렌더링됩니다.
+
+### 1-1. Server Rendering(서버 렌더링)
+- 서버 렌더링에는 다음 시점에 따라 두 가지 유형이 있습니다.
+- **정적 렌더링**(또는 사전 렌더링)은 서버 시작시간에 미리 계산을 통해 캐시를 생성합니다. 
+    - *사용자는 초기 페이지 로드 시에 더 빠른 렌더링을 경험할 수 있습니다.*
+- **동적 렌더링**은 클라이언트의 요청에 대한 응답으로 오직 실시간에 발생합니다.
+- 서버 렌더링의 단점은 클라이언트가 새 경로를 요청하기 전에 서버의 응답을 기다려야 한다는 것입니다.
+- Next.js는 사용자가 방문할 가능성이 높은 경로를 미리 가져오(prefetching)하고, 클라이언트 측 전환(client-side transitions)을 수행하여 지연 문제를 해결합니다.
+- 알아두면 좋습니다: 최신 방향은 서버에서 페이지 HTML이 생성됩니다.
+
+### 알아두면 좋습니다의 설명
+- 최적 방향은 처음 방문할 때 HTML이 생성됩니다.
+  - (HTML is also generated for the initial visit.)
+- 이 말의 의미에 대해서 설명합니다.
+- 일반적인 React 앱은 클라이언트 사이드 렌더링(CSR)과 사용하여, 처음 페이지를 방문할 때 **비 HTML** & **JavaScript 파일만 네트워크**로 다운로드되고, 브라우저가 JS를 실행해야 페이지를 렌더링합니다.
+
+- 하지만 Next.js에서는:
+  - 사용자가 첫 번째 URL을 처음 방문하면(initial visit)서버가 해당 페이지의 HTML을 미리 생성해서 브라우저로 전송합니다.
+  - 따라서 브라우저는 JS 코드가 로드되도록 하며 HTML 컨텐츠를 표시할 수 있습니다.
+  - 이때 React의 하이드레이션(hydration) 과정이 가동되어 실제로 실행됩니다.
+
+- 즉, **"초기 방문 사이트의 HTML을 생성해서 내려주기 때문에, 사용자가 경험(UX)이 좋아지고 SEO도 유리하다는 의미입니다."**
+
+### 1-2. Prefetching(프리페칭: 미리 가져오기)
+- 프리페칭은 사용자가 해당 경로로 이동하기 전에 백그라운드에서 해당 경로를 로드하는
+프로세스입니다.
+- 사용자가 링크를 클릭하기 전에 다음 경로를 렌더링하는 데 필요한 데이터가 클라이언 트 즉에 이미 준비되어 있기 때문에 애플리케이션에서 경로 간 이동이 즉각적으로 느껴 집니다.
+- Next.js는 <link› 컴포넌트와 연결된 경로를 자동으로 사용자 뷰포트에 미리 가져옵니 다.
+- <a> tag를 사용하면 프리페칭을 하지 않습니다.
+```tsx
+import Link from 'next/link'
+ 
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <html>
+      <body>
+        <nav>
+          {/* Prefetched when the link is hovered or enters the viewport */}
+          <Link href="/blog">Blog</Link>
+          {/* No prefetching */}
+          <a href="/contact">Contact</a>
+        </nav>
+        {children}
+      </body>
+    </html>
+  )
+}
+```
+
+### 1-2. Prefetching(프리페칭: 미리 가져오기)
+- 미리 가져오는 경로의 양은 정적 경로인지 동적 경로인지에 따라 달라집니다.
+- √정적 경로: 전체 경로가 프리퍼치 됩니다.
+- √동적 경로: 프리페치를 건너뛰거나, loading.ts가 있는 경우 경로가 부분적으로 프리 페칭 됩니다.
+- Next.js는 동적 라우팅을 건너뛰거나 부분적으로 프리페칭하는 방법으로 사용자가 방문 하지 않을 수도 있는 경로에 대한 서버의 불필요한 작업을 방지합니다.
+- 그러나 네비게이션 전에 서버 응답을 기다리면 사용자에게 앱이 응답하지 않는다는 인상을 줄 수도 있습니다.
+- 동적 경로에 대한 네비게이션 환경을 개선하려면 스트리밍을 사용할 수 있습니다. 
+<img width="1600" height="748" alt="Image" src="https://github.com/user-attachments/assets/a5d9f077-9bf7-45d6-9f43-04fcdd127ad9" />
+
+### 1-3. Streaming (스트리밍)
+- 스트리밍을 사용하면 서버가 전체 경로가 렌더링될 때까지 기다리지 않고, 동적 경로의 일부가 준비되는 즉시 클라이언트에 전송할 수 있습니다.
+- 즉, 페이지의 일부가 아직 로드 중이더라도 사용자는 더 빨리 콘텐츠를 볼 수 있습니다.
+- 동적 경로의 경우, 부분적으로 미리 가져올 수 있다는 뜻입니다. 즉, 공유 레이아웃과 로딩 스켈레톤을 미리 요청할 수 있습니다.  
+
+<img width="1600" height="785" alt="Image" src="https://github.com/user-attachments/assets/19fd8290-32c2-40c2-bd2e-c42091b38d95" />
+
+- loading Skeletons 또는 앱에서 콘텐츠가 로드되는 동안 사용자에게 보여지는 빈 화면의 일종
+
+### 1-3. Streaming(스트리밍)
+- 스트리밍을 사용하려면 라우팅 폴더에 loading.tsx 파일을 생성합니다.
+
+<img width="1600" height="606" alt="Image" src="https://github.com/user-attachments/assets/901b980f-8e6b-44c4-b7b0-3fb7f73838c9" />
+
+```tsx
+export default function Loading() {
+  // Add fallback UI that will be shown while the route is loading.
+  return <LoadingSkeleton />
+}
+```
+
+### 1-3. Streaming (스트리밍)
+- Next.js는 백그라운드에서 page.tsx 콘텐츠를 <Suspenser 경계로 자동 래핑합니다.
+- 미리 가져온 대체 UI는 경로가 로드되는 동안 표시되고, 준비가 되면 실제 콘텐츠로 대 체됩니다.
+- 알아두면 좋은 정보: <Suspense>를 사용하여 중첩된 컴포넌트에 대한 로딩 UI를 만들
+수도 있습니다. React 예제를 참고하세요.
+- loading.tsx의 이점:
+- √ 사용자에게 즉각적인 네비게이션과 시각적 피드백을 제공합니다.
+- √ 공유 레이아웃은 상호 작용이 가능하고, 네비게이션은 중단될 수 있습니다.
+- √ 개선된 핵심 웹 핵심 지표: TFB, FCP, 및 III
+- 네비게이션 환경을 더욱 개선하기 위해 Next.js는 <linko 컴포넌트를 사용하여 클라이 언트 즉 전환을 수행합니다.
+- Web Vitals: 웹사이트의 사용자 경험을 측정하고 개선하기 위한 구글의 핵심 지표
+- Core WebKitals: 페이지 로딩 성능 상호작용 반응성, 시각적 안정성을 측정하는 핵심 지표
+
+### Shared layouts remain interactive and navigation is interruptible
+[ Shared layouts remain interactive ]
+- #Next.js App Router에서는 layout.tsx가 여러 페이지 간에 공유(Shared) 됩니다. 예: /blog/page.tsx와/blog/[slug]/page.tsx 모두 blog/layout.tsx를 공유.
+- #페이지 이동 시 layout.tsx는 다시 리렌더링되지 않고 그대로 유지되기 때문에, 사이드 바, 네비게이션 메뉴, 음악 플레이어 같은 UI가 새 페이지 로딩 중에도 계속 동작합니 다.
+[navigation is interruptible]
+- #Next.js는 페이지 이동 시 새로운 데이터를 불러오는데, 그 사이에 사용자가 다른 네비 게이션 동작을 하면 이전 로딩을 취소(cancel) 해 줍니다.
+- #즉, 네트워크 요청이나 렌더링이 진행 중이라도 사용자가 다시 클릭하면 이전 요청은 중단되고 새로운 요청만 실행 됩니다.
+- 즉, 레이아웃은 페이지 전환 중에도 계속 동작하고, 페이지 이동이 진행 중이어도 다 른 이동 요청이 들어오면 취소 가능하다는 의미입니다.
+
+### 
+
 ## 9월 17일 4주차 수업내용
 ### git checkout vs git switch 차이
 - checkout은 브랜치를 이동 하고 파일도 바꿀 수 있습니다. 이 때문에 실수할 위험성이
