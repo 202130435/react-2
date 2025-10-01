@@ -1,6 +1,501 @@
 # React2
 # 202130435 허동민
 
+## 10월 1일 수업내용
+### 1-4. Client-side transitions(클라이언트 측 전환)
+- 일반적으로 서버 렌더링 페이지로 이동하면 전체 페이지가 로드됩니다.
+  →이로 인해 state가 삭제되고, 스크롤 위치가 재설정되며, 상호작용이 차단됩니다.
+- Next.js는 <Link> 컴포넌트를 사용하는 클라이언트 측 전환을 통해 이를 방지합니다. 페이지를 다시 로딩하는 대신 다음과 같은 방법으로 콘텐츠를 동적으로 업데이트합니다:
+- √ 공유 레이아웃과 UI를 유지합니다.
+- √ 현재 페이지를 미리 가져온(prefetching) 로딩 상태 또는 사용 가능한 경우 새 페이지 로 바꿉니다.
+- 클라이언트 측 전환은 서버에서 렌더링된 앱을 클라이언트에서 렌더링된 앱처럼 느껴지 게 하는 요소입니다.
+- 또한 프리페칭 및 스트리밍 과 함께 사용하면 동적 경로에서도 빠른 전환이 가능합니다.
+
+### 1절 네비게이션 작동 방식 실습
+- 앞에서 배운 내용을 다시 한번 확인합니다.
+- 디렉토리 구조는 다음과 같습니다.
+- 디렉토리 이름(blog)은 다른 것으로 해도 됩니다.
+app/
+├── page.tsx    // Root Page
+├── layout.tsx  // RootLayout
+└── blog/
+    ├── page.tsx    // 블로그 목록
+    └── loading.tsx // 로딩 스켈레톤
+
+- Root Page를 간단히 작성합니다.
+- blog 디렉토리를 만들고, 간단한 page와 로딩 스켈레톤을 만듭니다.
+- RootLayout에 Link 컴포넌트를 이용해서 blog의 네비게이션을 만듭니다.
+- 이대로는 로딩 스켈레톤의 동작을 확인할 수 없으니 blog page에 time delay를 줍니다.
+- 문서에는 RootLayout에 <a> 태그를 이용해서 blog의 네비게이션을 만드는 예제가 있습니다
+
+### 1절 네비게이션 작동 방식 실습
+- 하지만 RootLayout에 <a> 태그를 사용하면 다음과 같은 오류가 발생합니다.
+
+Do not use an <a> element to navigate to /blog. Use <Link> from next/link instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages
+
+- 안내에는 blog로 이동할 때 <a> 태그를 사용하지 말고 <Link>를 사용하라고 나옵니다.
+- 외부 링크를 사용할 때와 <a> 태그에 target과 같은 속성을 추가하면 사용은 가능하지만 되도록 <Link>를 사용하세요.
+
+### 2. 전환을 느리게 만드는 요인은 무엇일까요?
+- Next.js는 최적화를 통해 네비게이션 속도가 빠르고 반응성이 뛰어납니다.
+- 하지만 특정 조건에서는 전환 속도가 여전히 느릴 수 있습니다.
+- 다음은 몇 가지 일반적인 원인과 사용자 경험을 개선하는 방법입니다.
+
+### 2-1. 동적 경로 없는 loading.tsx
+- 동적 경로로 이동할 때 클라이언트는 결과를 표시하기 전에 서버의 응답을 기다려야 합니다.
+- → 이로 인해 사용자는 앱이 응답하지 않는다는 인상을 받을 수 있습니다.
+- 부분 프리페칭을 활성화하고, 즉시 네비게이션을 트리거하고, 경로가 렌더링되는 동안 로딩 UI를 표시하려면 동적 경로에 loading.tsx를 추가하는 것이 좋습니다.
+
+```tsx
+// app/thing/[slug]/loading.tsx
+
+export default function Loading() {
+  return <LoadingSkeleton />;
+}
+```
+
+### 2-1. 동적 경로 없는 loading.tsx
+- 알아두면 좋은 정보: 개발 모드에서 **Next.js 개발자 도구(Devtools)**를 사용하여 경로가 정적인지 동적인지 확인할 수 있습니다. 자세한 내용은 devIndicators를 참조하세요.
+- 💡 Next.js 15.2.0부터 'position' 옵션이 새롭게 추가 되었습니다.
+- appIsrStatus, buildActivity 및 buildActivityPosition 옵션은 더 이상 사용되지 않습니다.
+- 보통 좌측 하단에 N자 아이콘으로 표시 되지만, 만일 보이지 않는다면 next.config.ts에 devIndicators를 다음과 같이 추가 합니다.
+- 위치를 바꾸고 싶다면 인디케이터 설정에서 바꿔주면 됩니다.
+- 아직은 라우팅 결과 정도만 가능합니다.
+
+```js
+// next.config.js > next.config
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
+  devIndicators: { position: 'bottom-left' },
+};
+
+export default nextConfig;
+```
+
+### 2-2. 동적 세그먼트 없는 generateStaticParams
+- 동적 세그먼트는 사전 렌더링될 수 있지만, generateStaticParams가 누락되어 사전 렌더링되지 않는 경우, 해당 경로는 요청 시점에 동적 렌더링으로 대체됩니다.
+- generateStaticParams를 추가하여 빌드 시점에 경로가 정적으로 생성되도록 합니다.
+
+# 다음 코드는 완성되지 않아 동작하지 않으니 뒤에서 실습을 통해 알아 보겠습니다.
+```tsx
+// app/blog/[slug]/page.tsx
+
+export async function generateStaticParams() {
+  const posts = await fetch('https://.../posts').then((res) => res.json())
+
+  return posts.map((post) => ({
+    slug: post.slug,
+  }))
+}
+
+export default async function Page({
+  params,
+}: {
+  params: { slug: string }
+}) {
+  const { slug } = await params
+  // ...
+}
+```
+
+### generateStaticParams가 없는 경우 실습
+- 먼저 generateStaticParams가 없는 경우 입니다.
+- 실습할 디렉토리 구조는 다음과 같습니다.
+- 더미 데이터는 3장에서 사용했던 것을 사용합니다.
+- 테스트가 편하게 blog2의 메뉴를 만듭니다.
+
+app/
+└── blog2/
+    ├── page.tsx    // 블로그 목록
+    ├── posts.tsx   // 더미 데이터
+    └── [slug]/
+        └── page.tsx    // 개별 포스트
+
+- blog 목록 (/app/blog2/page.tsx)
+
+```tsx
+import Link from "next/link";
+import { posts } from "./posts";
+
+export default function BlogPage() {
+  return (
+    <div>
+      <h2>블로그 목록</h2>
+      <ul>
+        {posts.map((post) => (
+          <li key={post.slug}>
+            <Link href={`/blog2/${post.slug}`}>{post.title}</Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+- blog 개별 포스트 (/app/blog2/[slug]/page.tsx)
+
+```tsx
+import { posts } from "../posts";
+
+export default async function PostPage({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  // generateStaticParams가 없으면 여기서 slug를 가져와서 처리
+  const post = posts.find((p) => p.slug === params.slug);
+
+  if (!post) {
+    return <div>포스트를 찾을 수 없습니다.</div>;
+  }
+
+  return (
+    <article>
+      <h1>{post.title}</h1>
+      <p>{post.content}</p>
+    </article>
+  );
+}
+```
+
+### 동적 세그먼트 없는 generateStaticParams 실습
+- generateStaticParams를 쓰면 빌드 시점에 정적 HTML을 미리 생성합니다.
+- 예제처럼 안 쓰면, 요청 할 때마다 서버에서 동적으로 처리합니다.
+- 따라서 자주 변하지 않는 페이지는 generateStaticParams 사용을 권장합니다.
+- → 정적 사이트처럼 빠르기 때문입니다.
+- 사용자 입력, DB 조회 등이 필요한 경우는 generateStaticParams 없이 런타임 처리를 하는 것이 좋습니다.
+
+### 코드 분석 - generateStaticParams가 없는 경우
+
+// app/blog2/[slug]/page.tsx
+// blog2의 동적 라우트로 각 포스트의 slug에 대응하는 페이지를 렌더링합니다.
+// 이 라우트는 generateStaticParams를 사용하지 않으므로 빌드 타임이 아닌 런타임에 params가 전달됩니다.
+// App Router에서는 params가 Promise로 전달될 수 있으나 안전하게 사용하려면 await params로 값을 해석해야 합니다.
+
+``` tsx
+import { posts } from "../posts";
+
+export default async function PostPage({
+  params,
+}: {
+  // 런타임에서 전달되는 params는 Promise 형태일 수 있습니다.
+  params: Promise<{ slug: string }>;
+}) {
+  // params를 await하여 실제 { slug } 값을 얻습니다.
+  // (generateStaticParams가 있는 경우 런타임에서 슬러그를 가져오기 때문)
+  const { slug } = await params;
+  const post = posts.find((p) => p.slug === slug);
+
+  // 포스트를 찾지 못하면 간단한 404 메시지를 반환하거나
+  // 실제 프로젝트에서는 Next.js의 notFound()를 호출하거나
+  // 커스텀 404 컴포넌트를 렌더링하는 것이 좋습니다.
+  if (!post) {
+    return <h1>포스트를 찾을 수 없습니다.</h1>;
+  }
+
+  return (
+    <article>
+      <h1>{post.title}</h1>
+      <p>{post.content}</p>
+    </article>
+  );
+}
+```
+
+### generateStaticParams를 사용하는 경우 실습
+- 문서의 예제처럼 generateStaticParams를 사용하는 경우의 예제입니다.
+- 실습할 디렉토리 구조는 다음과 같습니다.
+- blog2 디렉토리를 복사해서 사용하면 실습은 빠르게 진행할 수 있습니다.
+- 테스트가 편하게 blog3의 메뉴를 만듭니다.
+- 이렇게 코딩을 하면 리스트에서 링크를 통해 슬러그에 접근하면 오류가 나지 않지만, 직접 링크를 통해 접근하면 오류가 발생합니다.
+
+- 디렉토리 구조
+app/
+└── blog3/
+    ├── page.tsx    // 블로그 목록
+    ├── posts.tsx   // 더미 데이터
+    └── [slug]/
+        └── page.tsx    // 개별 포스트
+
+- 개별 포스트 페이지 코드
+``` tsx
+// app/blog3/[slug]/page.tsx
+
+import { posts } from "../posts";
+
+// 빌드 타임에 동적 슬러그 경로 생성
+export async function generateStaticParams() {
+  return posts.map((post) => ({
+    slug: post.slug,
+  }));
+}
+
+export default async function PostPage({ params }: { params: { slug: string } }) {
+  const post = posts.find((p) => p.slug === params.slug);
+
+  if (!post) return <div>404 Not Found</div>;
+
+  return (
+    <article>
+      <h1>{post.title}</h1>
+      <p>{post.content}</p>
+    </article>
+  );
+}
+```
+
+### generateStaticParams를 사용하는 경우 실습
+- 빌드 시점에 Next.js가 app/blog3/[slug]/page.tsx 같은 동적 라우트를 찾으면 **generateStaticParams()**를 실행합니다.
+- generateStaticParams()가 반환하는 값은 다음과 같은 형태의 배열입니다.
+
+JSON
+[
+  { "slug": "hello" },
+  { "slug": "world" },
+  { "slug": "nextjs" }
+]
+- Next.js는 반환된 배열의 각 params 객체에 대해 page.tsx를 실행하여, 정적 HTML 페이지를 미리 생성합니다.
+
+[ params 객체 ]
+params = { slug: "hello" }
+params = { slug: "world" }
+params = { slug: "nextjs" }
+→ 빌드 후 
+
+→ [ 생성된 HTML 파일 ]
+/blog/hello/index.html
+/blog/world/index.html
+/blog/nextjs/index.html
+
+- ##정리하면
+- generateStaticParams() 함수 자체는 slug를 포함한 객체 배열만 반환합니다.
+- Next.js 빌드 프로세스가 이 배열을 순회하며 → 각 slug에 대해 page.tsx를 실행 → 정적 HTML을 생성합니다.
+- map 함수는 어떤 페이지들을 미리 HTML로 만들어야 할지 그 목록을 Next.js에게 전달하는 역할을 합니다.
+
+### 코드 분석 - generateStaticParams가 있는 경우
+
+``` tsx
+//오류를 수정하기 위해서는 다음과 같이 async, await을 사용해야 합니다.
+//파일 설명 (app/blog3/[slug]/page.tsx)
+//각 포스트 슬러그(slug)에 대응하는 정적 페이지를 렌더링합니다.
+//이 파일은 App Router의 동적 라우트([slug])에 대응합니다.
+//generateStaticParams를 통해 빌드 시 생성할 경로들을 정의합니다.
+//이 페이지 컴포넌트는 params를 받아 해당 슬러그의 포스트를 찾아 렌더링합니다.
+
+import { notFound } from "next/navigation";
+import { posts } from "../posts";
+
+// build 시점에 미리 생성할 slug 목록을 반환합니다.
+// Next.js는 반환된 각 slug에 대해 정적 페이지를 생성합니다.
+// posts 배열을 순회하며 { slug } 형식의 객체 배열을 반환합니다.
+export async function generateStaticParams() {
+  return posts.map((post) => ({
+    slug: post.slug,
+  }));
+}
+
+// 페이지 컴포넌트
+// `params`는 환경(Next 서버/서버/클라이언트) 및 라이프사이클에 따라 Promise일 수 있습니다.
+// 따라서 안전하게 사용하려면 `await params`로 값을 해석(unwrap)한 후 프로퍼티를 접근합니다.
+// 여기서는 `{ params }: { params: Promise<{ slug: string }> }` 타입으로 받고
+// `const { slug } = await params;`로 슬러그를 추출합니다.
+export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+
+  // posts에서 슬러그에 해당하는 포스트를 찾습니다.
+  const post = posts.find((p) => p.slug === slug);
+
+  // 일치하는 포스트가 없으면 404 UI를 렌더링합니다.
+  // 실무에서는 커스텀 404 컴포넌트나 notFound() 호출로 처리할 수 있습니다.
+  if (!post) {
+    notFound();
+  }
+}
+```
+
+### await이 없어도 async를 붙여 두는 이유
+- Next.js 13+의 App Router에서 page.tsx와 같은 **서버 컴포넌트(Server Component)**는 기본적으로 비동기(asynchronous) 렌더링을 전제로 합니다.
+- 페이지 안에서 데이터를 fetch하는 경우가 많기 때문에, async를 기본으로 붙여도 전혀 문제가 없습니다. await이 당장 없더라도 async를 사용하는 주된 이유는 다음과 같습니다.
+1. 일관성 유지
+- 같은 프로젝트 안에서 어떤 페이지는 async, 어떤 페이지는 일반 function으로 작성하면 혼란스러울 수 있습니다. 코드 스타일의 일관성을 위해 async를 사용합니다.
+→ Next.js 공식 문서도 대부분의 예제를 async function으로 작성합니다.
+2. 확장성
+- 지금은 로컬 더미 데이터(posts.find(...))를 사용하지만, 나중에 DB나 외부 API에서 데이터를 가져오는 await fetch(...)와 같은 코드로 변경될 수 있습니다. 미리 async를 붙여두면 나중에 수정할 필요 없이 코드를 쉽게 확장할 수 있습니다.
+3. React 서버 컴포넌트(RSC) 호환성
+- 서버 컴포넌트는 Promise를 반환할 수 있어야 합니다. async 함수는 항상 Promise를 반환하므로 이 조건을 자연스럽게 만족시킵니다. Next.js는 내부적으로 async 패턴에 최적화된 렌더링 파이프라인을 갖추고 있어 불필요한 오버헤드가 거의 없습니다.
+
+### generateStaticParams가 없는 경우와 있는 경우 비교
+- #generateStaticParams가 없는 경우
+- Next.js는 slug 값을 빌드 타임(build time)에는 모르는 상태입니다.
+  - → 따라서 slug 페이지에 접속하면 Next.js가 서버에서 요청할 때마다 해당 페이지를 동적으로 렌더링하며, 빌드 결과물로 HTML 파일은 생성되지 않습니다.
+
+- #generateStaticParams가 있는 경우 Next.js에 빌드 타임에 생성할 slug 목록을 미리 알려줄 수 있습니다.
+  - → 이 경우에는 지정한 slug에 대해서는 정적 HTML + JSON이 빌드 타임에 생성되어, 최초 접근 시 SSR이 필요 없이 미리 만들어진 페이지를 제공합니다.
+
+- #한눈에 보는 비교표
+<img width="358" height="87" alt="Image" src="https://github.com/user-attachments/assets/e1f27ce7-65ec-4779-a748-3d08f22d5c9f" />
+
+### 2-3. 느린 네트워크
+- 네트워크가 느리거나 불안정한 경우, 사용자가 링크를 클릭하기 전에 **프리페칭(prefetching)**이 완료되지 않을 수 있습니다.
+- 이것은 정적 경로와 동적 경로 모두에 영향을 미칠 수 있습니다.
+- 이 경우, loading.tsx 파일이 아직 프리페칭되지 않았기 때문에 즉시 표시되지 않을 수 있습니다.
+- 체감 성능을 개선하기 위해 useLinkStatus Hook을 사용하여 전환이 진행되는 동안 사용자에게 인라인 시각적 피드백을 표시할 수 있습니다. (예: 링크의 스피너 또는 텍스트 글리머)
+
+```tsx
+// app/ui/loading-indicator.tsx
+
+'use client'
+
+import { useLinkStatus } from 'next/link'
+
+export default function LoadingIndicator() {
+  const { pending } = useLinkStatus()
+  return pending ? (
+    <div role="status" aria-label="loading" className="spinner" />
+  ) : null
+}
+```
+
+### 2-3. 느린 네트워크 (로딩 표시기 디바운스)
+- 초기 애니메이션 지연(예: 100ms)을 추가하고, 애니메이션을 보이지 않게(예: opacity: 0) 시작하면 로딩 표시기를 **"디바운스(debounce)"**할 수 있습니다.
+- 즉, 로딩 표시기는 내비게이션이 지정된 지연 시간보다 오래 걸리는 경우에만 표시됩니다. 이는 빠른 연결에서는 로딩 UI가 불필요하게 깜박이는 것을 방지해 줍니다.
+
+- 예제 CSS 코드
+```css
+.spinner {
+  /* ... */
+  opacity: 0;
+  animation:
+    fadeIn 500ms 100ms forwards, /* 100ms 지연 후 시작 */
+    rotate 1s linear infinite;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rotate {
+  to {
+    transform: rotate(360deg);
+  }
+} 
+```
+※ debounce란?
+연속적으로 발생하는 이벤트를 그룹화하여 특정 시간 간격 이후에 한 번만 처리하도록 하는 기술입니다. 주로 사용자 인터페이스에서 과도한 이벤트 발생을 막고 성능을 최적화하기 위해 사용합니다.
+
+### 2-4. 프리페칭 비활성화
+- <Link> 컴포넌트에서 prefetch prop을 false로 설정하여 프리페치를 사용하지 않도록 선택할 수 있습니다.
+- 이는 대량의 링크 목록(예: 무한 스크롤 테이블)을 렌더링할 때 불필요한 리소스 사용을 방지하는 데 유용합니다.
+
+``` js
+<Link prefetch={false} href="/blog">
+  Blog
+</Link>
+```
+- 그러나 프리페칭을 비활성화하면 다음과 같은 단점이 있습니다.
+- ✓ 정적 라우팅: 사용자가 링크를 클릭할 때만 페이지를 가져오게 되어 즉시 로딩되지 않습니다.
+- ✓ 동적 라우팅: 클라이언트가 해당 경로로 이동하기 전에 서버에서 먼저 렌더링되어야 하므로 지연이 발생합니다.
+
+- 대안: Hover 시 프리페칭
+  - 프리페치를 완전히 비활성화하지 않고 리소스 사용량을 줄이려면, 마우스 호버(hover) 시에만 프리페치를 사용하면 됩니다.
+  - 이렇게 하면 뷰포트의 모든 링크가 아닌, 사용자가 방문할 가능성이 높은 경로로만 프리페치가 제한됩니다. (Next.js 13.4부터 기본 동작)
+
+### 2-4. 프리페칭 비활성화
+```tsx
+'use client'
+ 
+import Link from 'next/link'
+import { useState } from 'react'
+ 
+function HoverPrefetchLink({
+  href,
+  children,
+}: {
+  href: string
+  children: React.ReactNode
+}) {
+  const [active, setActive] = useState(false)
+ 
+  return (
+    <Link
+      href={href}
+      prefetch={active ? null : false}
+      onMouseEnter={() => setActive(true)}
+    >
+      {children}
+    </Link>
+  )
+}
+```
+
+### 2-5. Hydration이 완료되지 않음
+- <Link>는 클라이언트 컴포넌트이기 때문에 라우팅 페이지를 프리페치(prefetch)하기 전에 하이드레이션(hydration)해야 합니다.
+- 초기 방문 시 대용량 자바스크립트 번들로 인해 하이드레이션이 지연되어 프리페칭이 바로 시작되지 않을 수 있습니다.
+- React는 **선택적 Hydration(Selective Hydration)**을 통해 이를 완화하며, 다음과 같은 방법으로 이를 더욱 개선할 수 있습니다.
+- ✓ @next/bundle-analyzer 플러그인을 사용하면 대규모 종속성을 제거하여, 번들 크기를 식별하고 줄일 수 있습니다.
+- ✓ 가능하다면 클라이언트에서 서버로 로직을 이동합니다. 자세한 내용은 서버 및 클라이언트 컴포넌트 문서를 참조하세요.
+
+### Hydration이란 무엇인가?
+- Hydration이란 서버에서 생성된 HTML에 JavaScript 로직을 추가하여 동적으로 상호작용이 가능하도록 만드는 과정을 의미합니다.
+- 특히, React, Vue 등 프론트엔드 라이브러리나 프레임워크에서 많이 사용되는 용어로, **서버 사이드 렌더링(SSR)**으로 생성된 정적인 HTML에 클라이언트 측에서 JavaScript를 통해 이벤트 리스너, 상태 관리 등을 주입하여 인터랙티브한 웹 페이지로 변환하는 과정을 말합니다.
+
+- #SSR과 Hydration
+  - SSR은 서버에서 미리 HTML을 생성하여 사용자에게 전달하는 방식입니다.
+  - 초기 로딩 속도가 빠르다는 장점이 있지만, 서버에서 생성된 HTML은 정적인 상태이므로 JavaScript 코드를 통해 동적인 상호작용을 구현하려면 추가적인 작업이 필요합니다.
+
+- #Hydration의 역할
+  - Hydration은 SSR로 생성된 정적인 HTML에 클라이언트 측 JavaScript를 연결하여, 페이지가 로드된 후에도 사용자와의 상호작용이 가능하도록 만듭니다.
+
+### 3. Examples - 네이티브 히스토리 API
+- Next.js를 사용하면 기본 window.history.pushState 및 window.history.replaceState 메서드를 사용하여 페이지를 다시 로드하지 않고도 브라우저의 기록 스택을 업데이트할 수 있습니다.
+- pushState 및 replaceState 호출은 Next.js 라우터에 통합되어 usePathname 및 useSearchParams와 동기화할 수 있습니다.
+
+### window.history.pushState
+- 이 것을 사용하여 브라우저의 기록 스택에 새 항목을 추가할 수 있습니다.
+- 사용자는 이전 상태로 돌아갈 수 있습니다.
+- 예를 들어 제품 목록을 정렬할 때 사용할 수 있습니다.
+
+### window.history.replaceState
+- 브라우저의 기록 스택에서 현재 항목을 바꾸려면 이 기능을 사용합니다.
+- 사용자는 이전 상태로 돌아갈 수 없습니다.
+- 예를 들어 애플리케이션의 로케일(Locale)을 전환하는 경우에 사용할 수 있습니다.
+※ Locale 이란?
+사용자의 언어, 지역, 날짜/시간 형식, 숫자 표기법 등 사용자 인터페이스에서 사용되는 다양한 설정을 정의하는 문자열입니다.
+
+### 3. Examples - 네이티브 히스토리 API
+- window.history.pushState 사용 예
+
+```tsx
+'use client'
+
+import { useSearchParams } from 'next/navigation'
+
+export default function SortProducts() {
+  const searchParams = useSearchParams()
+
+  function updateSorting(sortOrder: string) {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('sort', sortOrder)
+    window.history.pushState(null, '', `?${params.toString()}`)
+  }
+
+  return (
+    <>
+      <button onClick={() => updateSorting('asc')}>Sort Ascending</button>
+      <button onClick={() => updateSorting('desc')}>Sort Descending</button>
+    </>
+  )
+}
+```
+
+
 ## 9월 24일 5주차 수업내용
 ### searchParams란?
 - #URL 쿼리 문자열(Query String)을 읽는 방법입니다.

@@ -1,7 +1,7 @@
-export default function Shop() {
+export default function Account() {
     return (
         <div>
-            <h1 className="text-2xl font-bold">Shop</h1>
+            <h1 className="text-2xl font-bold">Account</h1>
             <p>Welcome to the Shop page!</p>
         </div>
     );
