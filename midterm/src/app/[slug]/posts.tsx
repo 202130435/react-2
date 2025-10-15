@@ -16,16 +16,16 @@ export const posts: Post[] = [
     content: "Next.js는 React 기반의 강력한 프레임워크입니다.",
   },
   {
-    slug: "typescript-basics",
-    title: "TypeScript 기초",
+    slug: "lunch",
+    title: "점심 메뉴",
     author: "허동민",
-    content: "TypeScript는 정적 타입을 지원하여 코드의 안정성을 높여줍니다.",
+    content: "간장불고기",
   },
   {
-    slug: "how-to-commit",
-    title: "Git 커밋만 하는 방법",
+    slug: "dinner",
+    title: "저녁 메뉴",
     author: "허동민",
-    content: "'git commit -m' 명령어만 사용하면 로컬 저장소에만 변경사항을 저장할 수 있습니다.",
+    content: "닭가슴살",
   },
   {
     slug: "dynamic-routing-example",
