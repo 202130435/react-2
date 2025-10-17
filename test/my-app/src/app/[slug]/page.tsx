@@ -1,4 +1,4 @@
-import { posts } from "../posts";
+import { posts } from "./posts"
 
 export default async function PostPage({
   params,
