@@ -1,6 +1,454 @@
 # React2
 # 202130435 허동민
 
+## 10월 29일 수업내용
+### Context provider 실습 코드 설명
+
+- 여기서 html[data-theme='light']는 속성 선택자(Attribute Selector)로 CSS에서 클래스(.class)나 아이디(#id)처럼 요소를 선택하는 또 다른 방법 입니다.
+- 속성 선택자는 class를 여러 개 붙이는 경우보다 스타일 충돌을 줄일 수 있습니다.
+- css를 적용하려면 코드를 어떻게 수정하면 좋을까요?
+- 직접 작성해 보세요!
+
+```css
+html[data-theme='light'] {
+  background-color: white;
+  color: black;
+}
+
+html[data-theme='dark'] {
+  background-color: black;
+  color: white;
+}
+``` 
+
+### Context provider 실습 코드 설명
+- 하지만 <body><ThemeProvider>...</ThemeProvider></body>처럼 감싸도, <body>를 감싸도 그리고 <html>을 감싸도 동작하는 이유는 무엇일까요?
+    - -> RootLayout 컴포넌트의 return 내부를 보면 일반 html처럼 보이지만 실제로는 Next.js 에서는 <html>과 <body>도 React의 JSX 엘리먼트로 렌더링 됩니다.
+    - -> 즉, 렌더링 트리 상으로는 다르게 보여도, useEffect에서 직접 DOM을 조작하기 때문에 결과적으로 똑같이 보이는 것입니다.
+
+- 코드가 완성되면 브라우저의 개발자 도구를 사용하여 테마가 변할 때의 엘리먼트의 상태를 관찰해 보세요.
+
+### Context provider의 실행 과정 리뷰
+1.  Context 생성 (theme-provider.tsx)
+
+- createContext(...)로 Context 객체를 만듭니다.
+    - : 초기값(default value)은 provider가 없을 때 사용할 fallback값 입니다.
+    - (여기선 theme: 'light', toggleTheme: () => {}).
+- 이 파일 내부에서 ThemeProvider 컴포넌트를 정의합니다.
+    - - useState로 theme 상태를 관리(예: 'light' | 'dark').
+    - - toggleTheme 함수는 setTheme을 호출해 상태를 변경.
+    - - useEffect로 상태 변경 시 document.documentElement.dataset.theme에 값을 기록. (전역 스타일 적용 용도)
+    - - ThemeContext.Provider에 value={{ theme, toggleTheme }}를 넣고 children을 감싸줍니다.
+
+[ 요약 ] 상태(state)와 상태를 바꾸는 함수(toggle)를 만든 뒤 Provider의 value로 내려줍니다. 상태는 Provider 내부에 보관됩니다.
+
+### Context provider의 실행 과정 리뷰
+
+2.  Provider 배치 (RootLayout)
+
+- RootLayout에서 ThemeProvider로 루트(또는 필요한 하위 트리)를 감싸줍니다.
+- <ThemeProvider><html>...{children}...</html></ThemeProvider>
+- 이렇게 하면 Provider 하위에 렌더링 되는 모든 컴포넌트들이 ThemeContext에 접근할 수 있다.
+- children은 RootLayout으로 전달된 자식 컴포넌트들을 의미하고, Provider가 그들을 감싸므로 자식들이 Context에 접근 가능해 지게 됩니다.
+
+3.  Consumer 사용 (theme-status.tsx)
+
+- ThemeStatus는 'use client'로 클라이언트 컴포넌트이며, useContext(ThemeContext)를 사용해 value를 읽어 들입니다.
+    - : const { theme, toggleTheme } = useContext(ThemeContext)
+- UI에서는 theme 값을 표시하고, 버튼 클릭 시 toggleTheme()을 호출 합니다.
+
+### Context provider의 동작 순서
+**동작 순서(버튼 클릭 시 호출)**
+
+- 1. 사용자가 ThemeStatus의 버튼 클릭.
+- 2. toggleTheme() 호출. (ThemeStatus가 Provider의 함수를 호출)
+- 3. Provider 내부의 setTheme이 실행되어 theme 상태가 변경.
+- 4. 상태 변경으로 Provider와 그 하위 컴포넌트들이 리렌더링되어 theme 값이 최신으로 반영됨.
+- 5. useEffect가 실행되어 document.documentElement.dataset.theme 값도 갱신. (글로벌 스타일 반영)
+
+### Context provider 순서도 형식으로 정리
+- # Theme Context의 동작 흐름을 순서도 형식으로 정리한 것입니다. 각 단계에 대응하는 파일/위치를 괄호 안에 표기했습니다.
+1.  앱 시작 / RootLayout 렌더
+    - RootLayout이 렌더되고 ThemeProvider로 children을 감쌈.
+    - (파일: layout.tsx -> ThemeProvider 사용)
+
+2.  Context 생성 (초기화)
+    - ThemeContext = createContext(...)가 정의되어 있음(기본값 제공).
+    - (파일: src/components/theme-provider.tsx)
+
+3.  Provider 인스턴스 생성
+    - ThemeProvider 컴포넌트가 실행되어 내부 state(theme, setTheme) 생성(useState).
+    - Provider의 value = { theme, toggleTheme }로 설정.
+    - (파일: src/components/theme-provider.tsx)
+
+### Context provider 순서도 형식으로 정리
+
+4.  하위 트리 렌더링
+    - Provider로 감싼 children(페이지/컴포넌트)이 렌더됨. 이 하위 트리는 Context에 접근 가능. (파일: layout.tsx -> children)
+
+5.  Consumer 사용: ThemeStatus 렌더
+    - ThemeStatus가 렌더되어 useContext(ThemeContext)로 { theme, toggleTheme }를 가져옴. (파일: src/components/theme-status.tsx)
+
+6.  사용자 상호작용: 버튼 클릭
+    - 사용자가 ThemeStatus의 버튼을 클릭하면 toggleTheme() 호출.
+    - (파일: theme-status.tsx 클릭 -> ThemeProvider의 toggleTheme 실행)
+
+7.  상태 변경 내부 처리
+    - ThemeProvider의 toggleTheme가 setTheme을 호출하여 theme 상태를 변경(예: 'light' -> 'dark'). (파일: theme-provider.tsx)
+
+### Context provider 순서도 형식으로 정리
+
+8.  부수효과 실행 (useEffect)
+    - theme 변경으로 ThemeProvider의 useEffect가 실행되어, document.documentElement.dataset.theme = theme 로 설정.
+    - (파일: theme-provider.tsx useEffect)
+
+9.  리렌더링 전파
+    - state 변경으로 Provider와 그 하위 Consumer들이 최신 value를 받아 리렌더링됨.
+    - ThemeStatus는 새 theme 값을 받아 UI(아이콘/텍스트)를 갱신함.
+
+10. 결과: 레이아웃/스타일 반영
+    - data-theme 속성 변경을 바탕으로 CSS([data-theme="dark"] 등)가 적용되면 실제 시각적 테마 변경이 화면에 반영됨.
+    - (파일: 전역 CSS 또는 별도 스타일 파일)
+
+### Context provider 순서도 형식으로 정리
+- Flowchart
+
+```text
+RootLayout 렌더
+↓
+ThemeProvider 생성 (useState: theme)
+↓
+Provider value 제공 -> children 렌더
+↓
+ThemeStatus(useContext) 읽음
+↓
+사용자 클릭 -> toggleTheme() 호출
+↓
+setTheme(newTheme) 실행 (state 변경)
+↓
+useEffect 실행 -> document.dataset.theme 업데이트
+↓
+Provider & Consumer 리렌더 -> UI 갱신
+```
+
+### 3-6. 외부(서드 파티) component
+
+- 실습은 뒤에서 합니다. 여기서는 이론에만 집중해 주세요.
+- client 전용 기능에 의존하는 외부 component를 사용하는 경우, 해당 component를 client component에 래핑하여 예상대로 작동하는지 확인할 수 있습니다.
+- 예를 들어, <Carousel />은 acme-carousel 패키지에서 를 가져올 수 있습니다.
+- 이 component는 useState를 사용하지만 "use client" 지시문은 없습니다.
+- ⚠️ "use client" 지시문 없이 어떻게 사용할 수 있을까요?
+- client component 내에서 <Carousel />을 사용하면 예상대로 작동합니다.
+
+```typescript
+// app/page.tsx
+'use client'
+
+import { useState } from 'react'
+import { Carousel } from 'acme-carousel'
+
+export default function Gallery() {
+  const [isOpen, setIsOpen] = useState(false)
+
+  return (
+    <div>
+      <button onClick={() => setIsOpen(true)}>View pictures</button>
+      {/* Works, since Carousel is used within a Client Component */}
+      {isOpen && <Carousel />}
+    </div>
+  )
+}
+```
+
+### 3-6. 외부(서드 파티) component
+
+- 그러나 server component 내에서 직접 사용하려고 하면 오류가 발생합니다.
+- 이는 Next.js가 <Carousel />이 client 전용 기능을 사용하고 있다는 것을 알지 못하기 때문입니다.
+- 이 문제를 해결하려면 client 전용 기능에 의존하는 외부 component를 자체 client component로 래핑할 수 있습니다.
+
+```typescript
+// app/carousel.tsx
+'use client'
+
+import { Carousel } from 'acme-carousel'
+
+export default Carousel
+```
+- 이제 server component 내에서 <Carousel />을 직접 사용할 수 있습니다.
+``` tsx
+// app/page.tsx
+
+import Carousel from './carousel'
+
+export default function Page() {
+  return (
+    <div>
+      <p>View pictures</p>
+      {/* Works, since Carousel is a Client Component */}
+      <Carousel />
+    </div>
+  )
+}
+```
+### 외부(서드 파티) component 실습
+
+- gallery.tsx를 문서 처럼 작성하면 다음과 같은 오류가 발생합니다.
+- -> 먼저 모듈을 설치하면 오류를 해결할 수 있습니다.
+    - `Cannot find module 'acme-carousel' or its corresponding type declarations. ts(2307)`
+- 하지만 모듈을 설치한 후에도 다시 Carousel 컴포넌트를 사용할 때 오류가 발생합니다.
+    - `Property 'items' is missing in type '{}' but required in type 'CarouselProps'. ts(2741)`
+- 이 오류는 Carousel 컴포넌트의 타입 정의(CarouselProps)에 필수 prop인 items가 정의되어 있어서, <Carousel />를 props 없이 렌더링해서 발생하는 타입 에러입니다.
+- items에서 사용할 이미지는 'https://picsum.photos/'의 더미를 사용합니다.
+
+# 외부(서드 파티) component 실습
+
+- # 문서의 코드를 다음과 같이 수정해 줍니다.
+
+```typescript
+// src > components > gallery.tsx > Gallery
+'use client'
+
+import { Carousel } from 'acme-carousel'
+
+export default function Gallery() {
+
+  // 예제용 이미지(public/images에 직접 파일을 두거나 외부 URL 사용)
+  const items = [
+    { id: '1', src: '[https://picsum.photos/id/1015/600/600](https://picsum.photos/id/1015/600/600)', alt: 'Landscape 1' },
+    { id: '2', src: '[https://picsum.photos/id/1018/600/600](https://picsum.photos/id/1018/600/600)', alt: 'Landscape 2' },
+    { id: '3', src: '[https://picsum.photos/id/1019/600/600](https://picsum.photos/id/1019/600/600)', alt: 'Landscape 3' },
+  ]
+
+  return (
+    <Carousel
+      items={items}
+    />
+  )
+}
+```
+
+### 외부(서드 파티) component 실습
+
+- 오류 수정 후에도 동작은 하지만 이미지가 첫 페이지에 모두 출력되어 정상 동작이라고 할 수는 없습니다.
+- 이유는 acme-carousel에서 제공하는 style이 적용되지 않아서 입니다.
+- style은 node_modules/acme-carousel/dist/styles.css 경로에 있지만, 이렇게 특정 모듈에 있는 스타일을 사용할 경우 global.css에 import해서 사용하는 것이 일반적입니다.
+
+```css
+@import 'acme-carousel/dist/styles.css';
+```
+- -> 하지만 이번 경우에는 acme-carousel의 특성 때문에 오류가 발생합니다.
+
+- 이런 경우라면 스타일을 components/에 복사해서 사용합니다. 위치는 다른 곳이라도 상관 없습니다.
+  - -> gallery.tsx에 import './styles.css' 를 추가 합니다.
+- Carousel : 웹사이트나 앱에서 여러 개의 이미지, 비디오, 텍스트 등의 콘텐츠를 일정한 간격으로 순서대로 보여주는 UI 요소.
+
+### 외부(서드 파티) component 실습
+
+- acme-carousel의 주요 옵션 및 기능은 다음과 같습니다.
+    - 자동 전환(autoplay)
+    - 반응형(responsive)
+    - 지원터치/스와이프 제어(touch/swipe)
+    - 가상화(virtualization) 및 지연 로딩(lazy loading)
+    - 접근성(accessibility) 기능
+    - 고급 애니메이션 및 3D 효과 등
+
+- 자세한 설명은 https://www.npmjs.com/package/acme-carousel 에서 확인할 수 있습니다.
+- Autoplay Carousel을 적용하려면 어떻게 해야 하는지 확인해 보세요.
+
+### 외부(서드 파티) component 실습
+
+- 먼저 테스트를 위해서 RootLayout에 carousel 메뉴를 추가합니다.
+- [ gallery.tsx 수정 ]
+- 좌우 버튼을 누르지 않아도 슬라이드가 자동으로 동작하도록 Slide 컴포넌트를 추가해 줍니다.
+- 그런데 Slide는 named export가 아니라 default export이기 때문에 { Carousel, Slide } 처럼 import하면 다음과 같은 오류가 발생합니다.
+
+```text
+Module '"acme-carousel"' has no exported member 'Slide'. Did you mean to use 'import Slide from "acme-carousel"' instead? ts(2614)
+```
+- 따라서 default export해줍니다
+```tsx
+import { useState } from 'react'
+import { Carousel } from 'acme-carousel'
+import Slide from 'acme-carousel'
+```
+- 사용하던 line7의 state 구문을 삭제합니다.
+
+### 3-6. 외부(서드 파티) component
+
+[ 라이브러리 작성자를 위한 조언 ]
+
+- component 라이브러리를 빌드하는 경우, client 전용 기능에 의존하는 진입점에 "use client" 지시문을 추가합니다.
+- 이렇게 하면 사용자가 래퍼를 만들 필요 없이 component를 server component로 가져올 수 있습니다.
+
+- 일부 번들러는 "use client" 지시어를 제거할 수 있습니다.
+- React Wrap Balancer 및 Vercel Analytics 저장소에서 "use client" 지시어를 포함하도록 esbuild를 구성하는 방법의 예를 확인할 수 있습니다.
+
+### 3-7. 환경 변수 노출 예방
+
+- JavaScript 모듈은 server 및 client component 모듈 간에 공유될 수 있습니다.
+- 이 말의 의미는 실수로 server 전용 코드를 client로 가져올 수도 있습니다.
+- 예를 들어 다음 함수를 살펴보겠습니다.
+
+```typescript
+// lib/data.ts
+export async function getData() {
+  const res = await fetch('[https://external-service.com/data](https://external-service.com/data)', {
+    headers: {
+      authorization: process.env.API_KEY,
+    },
+  })
+  return res.json()
+}
+```
+
+### 3-7. 환경 변수 노출 예방
+
+- 이 함수에는 client에 노출되어서는 안 되는 API_KEY 내용이 포함되어 있습니다.
+- Next.js에서는 NEXT_PUBLIC_ 접두사가 붙은 환경 변수만 client 번들에 포함됩니다.
+- 접두사가 붙지 않은 변수의 경우 Next.js에서 빈 문자열로 대체됩니다.
+- 결과적으로 client에서 getData()를 가져와서 실행할 수는 있지만 예상대로 작동하지는 않습니다.
+- client component에서 실수로 사용되는 것을 방지하려면 server-only package(서버 전용 패키지)를 사용할 수 있습니다.
+
+### 3-7. 환경 변수 노출 예방
+
+- 그 다음 패키지를 서버 전용 코드가 포함된 파일로 import 합니다:
+
+```typescript
+// lib/data.ts
+import 'server-only'
+
+export async function getData() {
+  const res = await fetch('[https://external-service.com/data](https://external-service.com/data)', {
+    headers: {
+      authorization: process.env.API_KEY,
+    },
+  })
+
+  return res.json()
+}
+```
+- 이제 모듈을 client component로 가져오려고 하면 빌드 타임 오류가 발생합니다.
+
+### 3-7. 환경 변수 노출 예방
+
+- 해당 client-only(클라이언트 전용) 패키지는 클라이언트 전용 로직이 포함된 모듈을 표시하는 데 사용할 수 있습니다. (예 window 객체에 액세스하는 코드)
+- Next.js에서 server-only 또는 client-only를 설치하는 것은 선택 사항입니다.
+- 그러나 lint 규칙에서 불필요한 종속성을 표시하는 경우, 문제를 방지하기 위해 해당 종속성을 설치할 수 있습니다.
+
+```bash
+>_ Terminal
+
+npm install server-only
+```
+
+### 3-7. 환경 변수 노출 예방
+
+- Next.js는 모듈이 잘못된 환경에서 사용될 때, 보다 더 명확한 오류 메시지를 제공하기 위해 내부적으로 server-only 및 client-only import를 처리합니다.
+- NPM의 이러한 패키지 내용은 Next.js에서 사용되지 않습니다.
+- 또한 Next.js는 noUncheckedSideEffectImports가 활성화된 TypeScript 구성에 대해 server-only 및 client-only에 대한 자체 유형 선언을 제공합니다.
+
+### 1. Fetching Data (데이터 가져오기)
+1-1. 서버 컴포넌트
+
+- 서버 컴포넌트에서 데이터를 가져올 수 있는 방법은 다음과 같습니다.
+    1.  fetch API
+    2.  ORM 또는 데이터베이스
+
+[ fetch API 사용 ]
+
+- 데이터를 가져오려면 fetch API를 사용하여 컴포넌트를 비동기식 함수로 변환하고 다음 fetch 호출을 기다립니다.
+ 예를 들어:
+
+```typescript
+// app/blog/page.tsx
+export default async function Page() {
+  const data = await fetch('[https://api.vercel.app/blog](https://api.vercel.app/blog)')
+  const posts = await data.json()
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+
+### 1. 데이터 가져오기(Fetching Data)
+
+[ 알아두면 좋은 정보 ]
+- fetch 응답은 기본적으로 캐시되지 않습니다.
+- 그러나 Next.js는 라우팅 페이지를 미리 렌더링 하고, 성능 향상을 위해 출력은 캐시됩니다.
+- 동적 렌더링을 사용하려면 { cache: 'no-store' } 옵션을 사용합니다. fetch API 참고
+- 개발 중에는 가시성과 디버깅을 개선하기 위해 fetch 호출을 기록할 수 있습니다. logging API 참고
+
+- 뒤에서 자세히 살펴보겠지만 Next.js 15.1이후부터 서버 컴포넌트에서 await 없이 fecth를 사용하게 되었습니다.
+
+### 1. 데이터 가져오기(Fetching Data)
+[ ORM 또는 데이터베이스를 사용 ]
+
+- 서버 컴포넌트는 서버에서 렌더링 되기 때문에 ORM이나 데이터베이스 클라이언트를 사용해서 안전하게 데이터베이스 쿼리를 실행할 수 있습니다.
+- 컴포넌트를 비동기 함수로 변환하고 호출을 기다리면 됩니다.
+
+```typescript
+// app/blog/page.tsx
+import { db, posts } from '@/lib/db'
+
+export default async function Page() {
+  const allPosts = await db.select().from(posts)
+  return (
+    <ul>
+      {allPosts.map((post) => (
+        <li key={post.id}>{post.title}</li>
+      ))}
+    </ul>
+  )
+}
+```
+- ORM(Object-Relational Mapping)은 객체 지향 프로그래밍 언어와 관계형 데이터베이스 간의 데이터를 자동으로 변환해주는 기술
+
+### 1. 데이터 가져오기(Fetching Data)
+1-2. 클라이언트 컴포넌트
+
+- 클라이언트 컴포넌트에서 데이터를 가져오는 방법에는 두 가지가 있습니다.
+    1.  React의 use Hook
+    2.  SWR 또는 React 쿼리와 같은 통신 라이브러리
+
+[ use Hook을 사용한 스트리밍 데이터 ]
+
+- React의 use Hook을 사용해서 서버에서 클라이언트로 데이터를 스트리밍합니다.
+- 서버 컴포넌트에서 데이터를 먼저 fetch하고, 그 결과(promise)를 클라이언트 컴포넌트에 prop으로 전달합니다.
+- 서버 컴포넌트는 async가 가능하기 때문에 await fetch()도 사용 가능합니다.
+- 하지만 클라이언트 컴포넌트에서는 async가 불가능하기 때문에 직접 fetch가 불가능 합니다. (렌더링 중 fetch 금지)
+- 이런 이유 때문에 서버에서 fetch한 결과를 prop으로 넘기고, 클라이언트에서는 use(promise)를 써서 데이터를 가져옵니다.
+
+### React의 use Hook을 사용한 실습
+
+- React의 use Hook을 사용해서 서버에서 클라이언트로 데이터를 스트리밍하는 예제입니다.
+- 먼저 서버 컴포넌트를 다음과 같이 수정합니다. blog 라우팅 페이지.
+- Don't await the data fetching function. 주석은 fetch함수에 await을 사용하지 말라는 의미입니다.
+- 가장 간단히 할 수 있는 방법은 getPost()함수를 사용하지 않고, 그 자리에 fetch함수를 그대로 사용하는 것입니다.
+
+```typescript
+// src > app > blog > page.tsx > Page
+import Posts from '@/posts'
+import { Suspense } from 'react'
+
+export default function Page() {
+  // Don't await the data fetching function
+  // const posts = getPosts()
+  const posts = fetch('[https://jsonplaceholder.typicode.com/posts](https://jsonplaceholder.typicode.com/posts)')
+    .then((res) => res.json())
+
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <Posts posts={posts} />
+    </Suspense>
+  )
+}
+```
+
+
 ## 10월 22일 수업내용
 ### 3-4. server 및 client component 인터리빙
 
@@ -453,13 +901,12 @@ return (
 - 따라서 ThemeContext.Provider 컴포넌트에 현재 theme state와 함께 toggleTheme 함수도 함께 props로 전달합니다. Line28
   - ➡️ 즉, 하위 컴포넌트에서는 현재 theme state를 알 수 없기 때문에 버튼 쪽으로 toggleTheme 함수와 함께 theme state를 함께 전달하는 것입니다.
 
-### # Context provider 실습 코드 설명
+### Context provider 실습 코드 설명
+- 테마 토글 버튼 코드 설명 (theme-status.tsx) - client 컴포넌트
 
-## 테마 토글 버튼 코드 설명 (theme-status.tsx) - client 컴포넌트
-
-- # ThemeContext를 사용하기 위해서 theme-provider를 import합니다. Line4
-- # useContext 함수를 이용해서 ThemeContext에서 전달 받은 theme와 toggleTheme을 추출 합니다. Line7
-- # 클릭 이벤트가 발생하면 추출된 toggleTheme함수를 실행하고, 버튼 내의 삼항 연산자를 사용하여 버튼의 모양을 교체해 줍니다. Line10 ~ Line11
+- #ThemeContext를 사용하기 위해서 theme-provider를 import합니다. Line4
+- #useContext 함수를 이용해서 ThemeContext에서 전달 받은 theme와 toggleTheme을 추출 합니다. Line7
+- #클릭 이벤트가 발생하면 추출된 toggleTheme함수를 실행하고, 버튼 내의 삼항 연산자를 사용하여 버튼의 모양을 교체해 줍니다. Line10 ~ Line11
 
 ```typescript
 // src > components > theme-status.tsx > ThemeStatus
@@ -498,7 +945,7 @@ import ThemeStatus from "@/components/theme-status";
   -> RootLayout 컴포넌트의 return 내부를 보면 일반 html처럼 보이지만 실제로는 Next.js 에서는 <html>과 <body>도 React의 JSX 엘리먼트로 렌더링 됩니다.
   -> 즉, 렌더링 트리 상으로는 다르게 보여도, useEffect에서 직접 DOM을 조작하기 때문에 결과적으로 똑같이 보이는 것입니다.
 
-### 
+
 
 ## 10월 17일 수업내용
 ### Introduction
