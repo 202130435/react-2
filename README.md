@@ -473,6 +473,36 @@ export const getPost = cache(async (id: string) => {
 })
 ```
 
+### 2. 중복된 요청 제거 및 데이터 캐시
+
+- 먼저 문서의 코드를 리뷰해 보도록 하겠습니다.
+- React의 cache() 함수를 이용해서 getPost() 결과를 메모이제이션(캐시) 합니다. Line4
+
+```typescript
+// /src/lib/data.tsx
+import { cache } from 'react'
+import { db, posts, eq } from '@/lib/db'
+
+export const getPost = cache(async (id: string) => {
+  const post = await db.query.posts.findFirst({
+    where: eq(posts.id, parseInt(id)),
+  })
+})
+```
+- cache() 내부에서 db.query.posts.findFirst()로 데이터베이스에서 특정 게시글을 가져오고 있습니다. Line5
+- 즉, 이 코드는 "데이터베이스 쿼리를 캐싱하는 함수" 예제입니다.
+- 그런데 이 코드가 동작하려면, @/lib/db 안에 데이터베이스 연결 설정과 posts 테이블 정의, eq 조건문 함수가 있어야 합니다.
+
+### 2. 중복된 요청 제거 및 데이터 캐시
+
+- 예제의 테스트를 정상적으로 테스트하기 위해서는 2가지 패키지가 필요합니다.
+- Drizzle-orm : SQL 데이터베이스를 위한 TypeScript 기반 ORM(Object-Relational Mapping/객체-관계형 매퍼) 패키지입니다.
+    - 이 패키지는 타입 안전성, 자동화된 마이그레이션, 그리고 커스텀 데이터 모델 정의의 기능을 제공하며,
+    - SQL을 직접 작성하는 대신 타입스크립트 코드를 통해 데이터베이스를 더 쉽고 안전하게 다룰 수 있게 해줍니다.
+
+- better-sqlite3 : Node.js 환경에서 SQLite 데이터베이스와 상호 작용하기 위한, 빠르고 사용하기 쉬운 동기식 라이브러리입니다.
+    - 기존의 다른 SQLite 라이브러리보다 더 높은 성능과 속도를 제공하며,
+    - 비동기 함수 호출 없이 간단하게 데이터베이스 작업을 할 수 있도록 설계되었습니다.
 
 ## 10월 29일 수업내용
 ### Context provider 실습 코드 설명
