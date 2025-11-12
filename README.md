@@ -1,5 +1,266 @@
 # React2
 # 202130435 허동민
+## 11월 12일 수업내용
+### 3. 스트리밍
+
+- 경고(Warning): 아래 내용은 애플리케이션에서 cacheComponents config 옵션이 활성화되어 있다고 가정합니다. 이 플래그는 Next.js 15 Canary에서 도입되었습니다.
+    - Next.js의 별칭은 latest와 canary 두가지가 있습니다. latest는 현재 가장 최신 안정 버전, canary는 안정화 직전의 최신 개발 버전을 의미합니다.
+- 서버 컴포넌트에서 async/await를 사용하는 경우 Next.js는 동적 렌더링을 선택합니다.
+- 즉, 모든 사용자 요청에 대해 서버에서 데이터를 가져와서 렌더링합니다.
+- 데이터 요청 속도가 느린 경우, 모든 데이터를 가져올 때까지 전체 경로의 렌더링이 차단됩니다.
+- 초기 로드 시간과 사용자 경험을 개선하려면 스트리밍을 사용하여 페이지의 HTML을 더 작은 단위의 블록으로 나누고, 점진적으로 서버에서 클라이언트로 해당 블록을 전송할 수 있습니다.
+
+<img width="1600" height="785" alt="Image" src="https://github.com/user-attachments/assets/f964aa4a-9a22-45f7-ace0-94508b055186" />
+
+### 3. 스트리밍 > 3-1. loading.tsx를 사용하는 방법
+
+- 애플리케이션에서 스트리밍을 구현하는 방법은 두 가지가 있습니다.
+    1.  loading.tsx 파일로 페이지 감싸기
+    2.  <Suspense>로 컴포넌트를 감싸기
+
+- 3-1. loading.tsx를 사용하는 방법
+
+- 데이터를 가져오는 동안 전체 페이지를 스트리밍하려면, page와 같은 디렉토리에 loading.tsx 파일을 생성 합니다.
+- 예를 들어, app/blog/page.tsx를 스트리밍하려면, app/blog 디렉토리 안에 loading.tsx 파일을 추가하면 됩니다.
+
+```typescript
+// app/blog/loading.tsx
+export default function Loading() {
+  // Define the Loading UI here
+  return <div>Loading...</div>
+}
+```
+
+### 3. 스트리밍 > 3-1. loading.tsx를 사용하는 방법
+
+- 사용자는 page가 렌더링 되는 동안 레이아웃과 로딩 상태를 즉시 확인할 수 있습니다.
+- 렌더링이 완료되면 새 콘텐츠가 자동으로 교체됩니다.
+<img width="1600" height="691" alt="Image" src="https://github.com/user-attachments/assets/cda9fd0f-0857-4e5a-a9c4-e5f48bad946c" />
+
+## 3. 스트리밍 > 3-1. loading.tsx를 사용하는 방법
+
+- loading.tsx는 layout.tsx 내부에 중첩되며, page.tsx 파일과 그 아래의 모든 자식 파일들을 <Suspense>로 자동 래핑합니다.
+
+<img width="1600" height="766" alt="Image" src="https://github.com/user-attachments/assets/441c4fe8-4a2b-4d87-9d9c-8463dc5af854" />
+
+- 이 방법은 경로 세그먼트(layout 및 page)에는 효과적이지만, 더 세분화된 스트리밍을 위해서는 <Suspense>를 사용할 수 있습니다.
+
+### 3. 스트리밍 > 3-2. <Suspense>를 사용하는 방법
+3-2. <Suspense>를 사용하는 방법
+
+- <Suspense>는 page의 어떤 부분을 스트리밍할지 더욱 세부적으로 설정할 수 있습니다.
+- 예를 들어, <Suspense> 경계를 벗어나는 모든 페이지 콘텐츠를 즉시 표시하고, 경계 안에 있는 블로그 게시물 목록을 스트리밍할 수 있습니다.
+
+- blog 페이지는 앞쪽 예제에서 사용했기 때문에, 이번 예제는 blog2로 작성해 보세요.
+
+```typescript
+// app/blog/page.tsx
+import { Suspense } from 'react'
+import BlogList from '@/components/BlogList'
+import BlogListSkeleton from '@/components/BlogListSkeleton'
+
+export default function BlogPage() {
+  return (
+    <main>
+      {/* This content will be sent to the client immediately */}
+      <header>
+        <h1>Welcome to the Blog</h1>
+        <p>Read the latest posts below.</p>
+      </header>
+      <main>
+        {/* Any content wrapped in a <Suspense> boundary will be streamed */}
+        <Suspense fallback={<BlogListSkeleton />}>
+          <BlogList />
+        </Suspense>
+      </main>
+    </main>
+  )
+}
+```
+
+### 3. 스트리밍 > 3-3. 의미 있는 로딩 상태 생성
+3-3. 의미 있는 로딩 상태 만들기
+
+- 즉시 로딩 상태는 탐색(접속) 후 사용자에게 즉시 표시되는 대체 UI입니다.
+    - 즉시 로딩 상태(instant loading state)란 loading.tsx 파일을 추가하여 폴더 내에 로딩 상태를 생성하는 것을 의미합니다.
+- 최상의 사용자 경험을 위해 앱의 응답을 사용자가 쉽게 이해할 수 있도록 의미 있는 로딩 상태를 디자인하는 것이 좋습니다.
+- 예를 들어, 스켈레톤과 스피너를 사용하거나, 커버 사진, 제목 등 향후 화면에 표시되는 작지만 의미 있는 요소를 사용할 수 있습니다.
+- 개발 중에는 React Devtools를 사용하여 컴포넌트의 로딩 상태를 미리 보고 검사할 수 있습니다.
+
+<img width="522" height="390" alt="Image" src="https://github.com/user-attachments/assets/b76dd755-4b3e-45cd-8eac-0f0f20221ffa" />
+
+### 4. 예제 > 4-1. 순차적 데이터 fetch
+4-1. 순차적 데이터 fetch
+
+- 트리 구조 내 중첩된 컴포넌트 각각이 자체 데이터를 가져올 때 중복 요청이 제거되지 않으면 순차적 데이터 가져오기가 발생하며, 이로 인해 응답 시간이 길어집니다.
+<img width="282" height="94" alt="Image" src="https://github.com/user-attachments/assets/a3369161-5a97-40ec-ac05-3d3b4fe1763e" />
+
+- 한 번의 fetch가 다른 하나의 fetch 결과에 따라 달라지는 경우 이 패턴이 필요할 수 있습니다.
+- 예를 들어, <Playlists> 컴포넌트는 <Artist> 컴포넌트가 데이터 fetch를 완료한 후에 데이터를 fetch를 시작합니다.
+- 그 이유는 <Playlists>가 artistID prop에 따라 달라지기 때문입니다.
+
+### 4. 예제 > 4-1. 순차적 데이터 fetch
+
+- 사용자 경험을 개선하려면 React <Suspense>를 사용하여 데이터를 가져오는 동안 fallback을 표시해야 합니다.
+- 이렇게 하면 스트리밍이 활성화되고 순차적인 데이터 요청으로 인해 전체 경로가 차단되는 것을 방지할 수 있습니다.
+- #문서의 코드를 그대로 사용하면 오류가 발생합니다. 오류를 수정해 보세요.
+
+```
+import { Suspense } from 'react';
+
+// --- 모의(Mock) 데이터 및 함수 ---
+// 실제로는 별도의 lib/data.ts 파일에서 import해야 합니다.
+
+type Artist = {
+  id: string;
+  name: string;
+};
+
+type Playlist = {
+  id: string;
+  name: string;
+};
+
+// 모의 getArtist 함수
+const getArtist = (username: string): Promise<Artist> => {
+  console.log(`Fetching artist: ${username}`);
+  return new Promise((resolve) =>
+    setTimeout(() => {
+      resolve({ id: `artist-${username}`, name: `Artist ${username}` });
+    }, 1000) // 1초 딜레이 시뮬레이션
+  );
+};
+
+// 모의 getArtistPlaylists 함수
+const getArtistPlaylists = (artistID: string): Promise<Playlist[]> => {
+  console.log(`Fetching playlists for artist: ${artistID}`);
+  return new Promise((resolve) =>
+    setTimeout(() => {
+      resolve([
+        { id: 'playlist-1', name: 'Greatest Hits' },
+        { id: 'playlist-2', name: 'Live Performances' },
+      ]);
+    }, 2000) // 2초 딜레이 시뮬레이션
+  );
+};
+
+// --- Playlists 컴포넌트 (Server Component) ---
+// Page 컴포넌트가 사용하므로 먼저 정의하거나 별도 파일에서 import해야 합니다.
+async function Playlists({ artistID }: { artistID: string }) {
+  // Use the artist ID to fetch playlists
+  const playlists = await getArtistPlaylists(artistID);
+
+  return (
+    <ul>
+      {playlists.map((playlist) => (
+        <li key={playlist.id}>{playlist.name}</li>
+      ))}
+    </ul>
+  );
+}
+
+// --- Page 컴포넌트 (Server Component) ---
+export default async function Page({
+  params,
+}: {
+  // 슬라이드의 내용(Next.js 15.1+ 기준)에 따라 params를 Promise로 타입 지정
+  params: Promise<{ username: string }>;
+}) {
+  // params Promise 해제
+  const { username } = await params;
+  
+  // Get artist information
+  const artist = await getArtist(username);
+
+  return (
+    <>
+      <h1>{artist.name}</h1>
+      
+      {/* Show fallback UI while the Playlists component is loading */}
+      <Suspense fallback={<div>Loading playlists...</div>}>
+        
+        {/* Pass the artist ID to the Playlists component */}
+        {/* Playlists는 artist 데이터가 준비된 후에 렌더링/fetching 시작 (순차적) */}
+        <Playlists artistID={artist.id} />
+      </Suspense>
+    </>
+  );
+}
+```
+
+### 문서 코드 수정 및 lib 생성
+
+- page에서 Suspense, getArtist, getArtistPlaylists를 import 합니다.
+- getArtist(username) 생성 합니다.
+    : username으로 users 조회 -> 첫 결과를 반환(id, name), 없으면 예외 발생합니다.
+- getArtistPlaylists(artistID) 생성 합니다.
+    : artistID(userID)로 albums 조회 -> [{id,name}, ...] 배열을 반환합니다.
+- Next.js 서버 환경에서 fetch를 사용하므로 page.tsx에서 await/비동기 호출로 바로 사용 가능합니다.
+- URL 세그먼트는 /artist/Bret과 같이 호출합니다.
+- Link도 레이아웃에 추가해 줍니다. RootLayout과 PageLayout 모두 생성해 보세요.
+
+### 4. 예제 > 4-2. 병렬 데이터 fetch
+4-2. 병렬 데이터 fetch
+
+- 경로 내의 데이터 요청이 동시에 발생할 때 병렬 데이터 가져오기가 발생합니다.
+- 기본적으로 레이아웃과 페이지는 병렬로 렌더링됩니다. 따라서 각 세그먼트는 가능한 한 빨리 데이터 fetch를 시작합니다.
+- 그러나 컴포넌트 내부에서 여러 개의 async/await 요청이 다른 요청 뒤에 배치되는 경우 순차적으로 처리될 수 있습니다.
+- 예를 들어, getAlbums는 getArtist가 확인될 때까지 차단됩니다.
+
+```typescript
+// app/[username]/page.tsx
+import { getArtist, getAlbums } from '@/app/lib/data'
+
+export default async function Page({ params }) {
+  // These requests will be sequential
+  const { username } = params
+  const artist = await getArtist(username)
+  const albums = await getAlbums(username)
+  return <div>{artist.name}</div>
+}
+```
+
+### 4. 예제 > 4-2. 병렬 데이터 fetch
+
+- 데이터를 사용하는 컴포넌트 외부에서 요청을 정의하고 Promise.all 등을 사용하여 함께 해결함으로써 요청을 병렬로 시작할 수 있습니다.
+
+```typescript
+// app/[artist]/[username]/page.tsx
+
+async function getArtist(username: string) {
+  const res = await fetch(`https://api.example.com/artist/${username}`)
+  return res.json()
+}
+
+async function getAlbums(username: string) {
+  const res = await fetch(`https://api.example.com/artist/${username}/albums`)
+  return res.json()
+}
+
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ username: string }>;
+}) {
+  const { username } = await params
+  // Initiate both requests in parallel
+  const artistData = getArtist(username)
+  const albumsData = getAlbums(username)
+
+  const [artist, albums] = await Promise.all([artistData, albumsData])
+
+  return (
+    <>
+      <h1>{artist.name}</h1>
+      <AlbumsList albums={albums} />
+    </>
+  )
+}
+```
+
+#
+
+
 ## 11월 5일 수업내용
 ### 1. 데이터 가져오기(Fetching Data)
 
