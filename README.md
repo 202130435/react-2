@@ -258,7 +258,11 @@ export default async function Page({
 }
 ```
 
-#
+### 4. 예제 > 4-2. 병렬 데이터 fetch
+
+- 알아두면 좋습니다.
+ - Promise.all을 사용할 때 하나의 요청이 실패하면 전체 작업이 실패합니다.
+ - 이 문제를 해결하려면 Promise.allSettled 메서드를 대신 사용할 수 있습니다.
 
 
 ## 11월 5일 수업내용
