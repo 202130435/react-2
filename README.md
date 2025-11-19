@@ -1,5 +1,494 @@
 # React2
 # 202130435 허동민
+## 11월 19일 수업내용
+### introduction
+
+- Next.js는 CSS를 사용하여 응용 프로그램의 스타일을 지정하는 여러 가지 방법을 제공 합니다.
+
+- Tailwind CSS
+- CSS Modules
+- Global CSS
+- External Stylesheets
+- Sass (Guide)
+- CSS-in-JS (Guide)
+
+### 1. Tailwind CSS
+
+- Tailwind CSS 는 사용자 정의 디자인을 구축하기 위한 저수준 유틸리티 클래스를 제공하는 유틸리티 우선 CSS 프레임워크입니다.
+
+- Tailwind CSS 설치:
+
+```bash
+>_ Terminal
+
+npm install -D tailwindcss @tailwindcss/postcss
+```
+
+- 프로젝트를 생성할 때 Tailwind CSS를 선택했으면 별도의 설치는 필요 없습니다.
+- postcss.config.mjs 파일에 PostCSS 플러그인을 추가합니다.
+
+```JavaScript
+
+// postcss.config.mjs
+
+export default {
+  plugins: {
+    '@tailwindcss/postcss': {},
+  },
+}
+```
+- 이 파일도 이미 설정이 되어 있습니다. 확인해 보세요.
+
+### 1. Tailwind CSS
+
+- 전역 CSS 파일에서 Tailwind 가져오기:
+
+```css
+/* app/globals.css */
+
+@import 'tailwindcss';
+```
+- 루트 레이아웃에서 CSS 파일을 가져옵니다.
+```
+// app/layout.tsx
+
+import './globals.css'
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+``` tsx
+// app/layout.tsx
+import Link from "next/link";
+import "./globals.css";
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <header>
+        <h1 className="text-2xl font-bold p-4 bg-gray-200">My Website Header</h1>
+        <nav className="p-4 bg-gray-100">
+          <Link href="/" className="mr-4 text-blue-500">Home</Link>
+          <Link href="/blog" className="mr-4 text-blue-500">Blog</Link>
+          <Link href="/blog2" className="text-blue-500">Blog2</Link>
+          <Link href="/blog3" className="ml-4 text-blue-500">Blog3</Link>
+          <Link href="/blog4" className="ml-4 text-blue-500">Blog4</Link>
+        </nav>
+      </header>
+      <body>
+        {children}
+      </body>
+    </html>
+  );
+}
+```
+# 2. CSS Modules
+
+- CSS 모듈은 고유한 클래스 이름을 생성하여 CSS의 범위를 로컬로 지정합니다.
+- 이를 통해 이름 충돌에 대한 걱정 없이 다른 파일에서 동일한 클래스를 사용할 수 있습니다.
+- CSS 모듈 사용을 시작하려면 .module.css 확장자가 있는 새 파일을 만들고, app 디렉토리의 컴포넌트로 가져옵니다.
+
+```css
+/* app/blog/blog.module.css */
+
+.blog {
+  padding: 24px;
+}
+```
+``` tsx
+/* app/blog/page.tsx */
+
+import styles from './blog.module.css'
+
+export default function Page() {
+  return <main className={styles.blog}></main>
+}
+```
+
+### 3. Global(전역) CSS
+
+- 전역 CSS를 사용하여 응용 프로그램 전체에 스타일을 적용할 수 있습니다.
+
+- app/global.css 파일을 만들고 루트 레이아웃으로 가져와 애플리케이션의 모든 경로에 스타일을 적용합니다.
+
+- # RootLayout은 앞에서 작성한 것과 동일합니다.
+- # global.css만 수정해 보세요.
+
+```css
+/* app/global.css */
+
+body {
+  padding: 20px 20px 60px;
+  max-width: 680px;
+  margin: 0 auto;
+}
+```
+
+``` tsx
+// app/layout.tsx
+
+// These styles apply to every route in the application
+import './global.css'
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+### 3. Global(전역) CSS
+
+💡 **알아두면 좋아요!**
+
+전역 app 스타일은 디렉토리 내의 모든 레이아웃, 페이지 또는 컴포넌트로 가져올 수 있습니다.
+그러나 Next.js는 스타일시트에 대한 React의 기본 제공 지원을 사용하여 Suspense와 통합하기 때문에 현재 충돌로 이어질 수 있는 경로 사이를 탐색할 때 스타일시트가 제거되지 않습니다.
+
+선언한 글로벌 CSS(예: Tailwind의 기본 스타일)에는 전역 스타일을 사용하고, 컴포넌트 스타일링에는 Tailwind CSS, 필요한 경우 사용자 정의 CSS에는 CSS 모듈을 사용하는 것이 좋습니다.
+
+- #정리하면 다음과 같습니다.
+
+1. 전역적으로 한 번만 적용되어야 하는 스타일은 global.css에 선언해서 사용합니다.
+   예를 들어 Tailwind의 기본 스타일(tailwindcss) 을 global에 import합니다.
+2. 대부분의 컴포넌트 스타일은 Tailwind로 처리합니다.
+3. Tailwind로 처리하기 어려운 특정 컴포넌트에 한해서 CSS Modules로 커스텀 스타일을 만들어 사용합니다.
+
+### Next.js에서 추천하는 스타일링 방법
+
+[ Global Styles = 전체 앱에 공통 적용되는 스타일 ]
+
+# 대표적인 Global Style이 적용되는 예는 다음과 같습니다.
+
+1.  html, body 기본 스타일
+2.  reset 스타일
+3.  전역 폰트 import
+4.  전역 색상/레이아웃 규칙
+5.  공통 animation 정의 등
+
+```css
+/* 변경 전 (Tailwind CSS 3.x) */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 변경 후 (Tailwind CSS 4.0) */
+@import 'tailwindcss';
+```
+- 반드시 전역적으로 동작해야 하는 스타일만 globals.css 선언해야 합니다.
+- 즉, 앱 전체에 적용되어야 하는 단 한 번의 스타일을 globals.css 정의 하라는 의미입니다.
+
+#
+# Next.js에서 추천하는 스타일링 방법
+
+[ Tailwind CSS = 대부분의 "컴포넌트 스타일링" ]
+
+- #Tailwind는 컴포넌트 단위 스타일 작성에 최적화되어 있습니다.
+  1. margin/padding
+  2. flex/grid 레이아웃
+  3. border, color, hover, transition
+  4. 반응형 클래스 등
+
+- #위의 예가 포함되는 대부분의 컴포넌트는 Tailwind로 스타일링을 할 경우 생산성을 향상 시키고, 빠른 유지보수에도 유리합니다.
+- #즉, 버튼, 카드, 내비게이션바 등 일반적인 UI는 Tailwind 클래스만으로 스타일링 하는 것이 좋습니다.
+
+### Next.js에서 추천하는 스타일링 방법
+
+[ CSS Modules = Tailwind로 표현하기 애매한 복잡한 스타일 ]
+
+- #Tailwind로 해결할 수 없는 스타일 예는 다음과 같습니다.
+
+1.  특정 컴포넌트만 사용하는 복잡한 animation
+2.  canvas, svg 등의 고급 스타일
+3.  Tailwind에 없는 아주 예외적인 custom class
+4.  많은 스타일링 규칙이 필요한 상황 (@keyframes, @font-face, 특수 selector 등)
+
+- #이런 상황에서는 Button.module.css, Card.module.css처럼 CSS Module을 사용해서 해당 컴포넌트에만 스코프된 스타일을 적용하는 것이 좋습니다.
+
+- #핵심은 CSS Modules은 Tailwind로 처리하기 어려울 때만 사용하라는 Next.js의 의도를 반영한 가이드 입니다.
+
+# 4. 외부 스타일시트
+
+- 외부 패키지로 제공되는 스타일시트는 app 디렉토리의 컴포넌트를 포함하여, 어느 곳에서나 import해서 사용할 수 있습니다.
+- # src 디렉토리를 사용하는 경우라면 src 디렉토리의 어느 곳에서나 사용할 수 있다는 의미 입니다.
+
+```typescript
+// app/layout.tsx
+
+import 'bootstrap/dist/css/bootstrap.css'
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body className="container">{children}</body>
+    </html>
+  )
+}
+```
+💡 알아두면 좋아요!
+
+- React 19에서는 <link rel="stylesheet" href="..." />를 사용할 수 있습니다. 자세한 내용은 React link 문서를 참고하세요.
+
+### Bootstrap 실습 (외부 스타일 시트)
+
+- 먼저 bootstrap 패키지를 설치합니다. 사이트에 상세한 설명이 있습니다.
+
+``` tsx
+$ npm install bootstrap@5.3.0
+```
+
+- 설치가 끝나면 사용하고 싶은 컴포넌트에 다음과 같이 import해서 사용합니다.
+
+```tsx */
+
+import 'bootstrap/dist/css/bootstrap.css'
+```
+
+- 문서에서는 RootLayout에 적용하는 것으로 되어 있으나 확인을 위해 blog2 페이지를 만든 후에 localLayout에 적용해 보도록 하겠습니다.
+
+``` tsx
+// src > app > blog2 > layout.tsx > Blog2Layout
+
+import 'bootstrap/dist/css/bootstrap.css'
+
+export default function Blog2Layout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <main>
+      <div className="container">{children}</div>
+    </main>
+  )
+}
+```
+
+### Bootstrap 실습 (외부 스타일 시트)
+
+- Blog2Layout에서 line10의 className="container" 는 Bootstrap의 스타일입니다.
+
+- 다음으로 blog2 page를 작성합니다.
+- 이 페이지에 Bootstrap의 버튼을 추가 합니다. 코드는 사이트의 Docs > Components에서 확인할 수 있습니다. -> 결과들 확인해 보세요.
+
+```typescript
+export default function Blog2Page() {
+  return (
+    <main className="p-4">
+      <h1 className="text-3xl font-semibold mb-4">Blog2 Page</h1>
+      <p className="text-lg">
+        This is the Blog2 page styled with Tailwind CSS.
+      </p>
+      <button type="button" className="btn btn-primary">Primary</button>
+      <button type="button" className="btn btn-secondary">Secondary</button>
+      <button type="button" className="btn btn-success">Success</button>
+      <button type="button" className="btn btn-danger">Danger</button>
+      <button type="button" className="btn btn-warning">Warning</button>
+      <button type="button" className="btn btn-info">Info</button>
+      <button type="button" className="btn btn-light">Light</button>
+      <button type="button" className="btn btn-dark">Dark</button>
+      <button type="button" className="btn btn-link">Link</button>
+    </main>
+  )
+}
+```
+
+### Bootstrap 실습 (외부 스타일 시트)
+
+- #Blog2Page에 Bootstrap을 import하지 않아도 사용할 수 있습니다.
+
+- #이것은 Blog2Layout에 import하는 것 만으로 해당 디렉토리 및 하위 디렉토리 전체에 사용이 가능하기 때문입니다.
+
+- #이제 local Layout이 어디까지 영향을 미치는지 확인해 보겠습니다.
+
+- #다음 컴포넌트에서는 Bootstrap의 Alerts중 하나를 사용하고, 내용에는 컴포넌트의 경로를 출력해서 확인하기 좋게 합니다.
+
+1. /blog2/Blog2Com.tsx 컴포넌트를 만들고 출력을 확인해 보세요.
+2. /blog2/components/Blog2Com2.tsx 컴포넌트를 만들고 출력을 확인해 보세요.
+3. /components/Blog2RootCom.tsx 컴포넌트를 만들고 출력을 확인해 보세요.
+4. blog3 페이지를 만들고, 지금까지 만든 컴포넌트를 추가해 줍니다.
+5. /blog3/Blog3Com.tsx 컴포넌트를 만들고 blog3 페이지에 삽입해 줍니다.
+
+### Bootstrap 실습 (외부 스타일 시트)
+
+- #출력을 확인하고 이상한 점을 발견 했나요?
+
+- #layout이 영향을 미치는 범위가 이상하다는 것을 발견할 수 있습니다.
+
+- #blog2의 localLayout에만 Bootstrap을 지정했는데 root component도 blog3에도 적용 된다는 것입니다.
+
+- #심지어는 blog3에 있는 컴포넌트에도 영향을 미칩니다.
+
+- #지금까지 알고 있던 localLayout의 영향 범위와는 다릅니다.
+
+- #분명히 localLayout에만 import했는데, src와 모든 하위 디렉토리 에 영향을 주고 있습니다.
+
+- #이유는 Bootstrap이 전역기반 CSS 프레임워크이기 때문입니다.
+
+- #따라서 localLayout뿐만 아니라 src/의 어느곳에서나 한번 import 하면 Next.js 번들에 합쳐져서 전역적으로 영향을 미치게 됩니다.
+
+### Bootstrap 실습 (외부 스타일 시트)
+
+- #따라서 Bootstrap과 같은 전역적으로 강제 주입하는 CSS 프레임워크는 주의해야 합니다.
+
+- #전역(Global) 스타일을 페이지 전체에 강제로 주입하는 라이브러리들은 다음과 같습니다.
+
+1. Bootstrap :
+    - *.css 를 import하면 모든 HTML 태그에 기본 스타일 규칙이 적용됨.
+    - 버튼, 폼, typography 등이 global reset 수준으로 변경됨.
+    - 다른 스타일과 쉽게 충돌 가능성 있음.
+
+2. Bulma :
+    - class 기반이긴 하지만 모든 요소(html, body, button 등)에 글로벌 스타일 적용.
+    - Bootstrap처럼 전체 애플리케이션 스타일이 바뀜.
+
+3. Foundation (Zurb Foundation)
+    - Bootstrap과 매우 유사한 구조.
+    - normalize + 전역 스타일이 애플리케이션 전체에 적용됨.
+
+### Bootstrap 실습 (외부 스타일 시트)
+
+4. Semantic UI / Fomantic UI
+    - 컴포넌트 스타일이 global CSS로 로드됨.
+    - ui.button 같은 네임스페이스가 있지만 전역 단위로 적용됨.
+    - 스타일 충돌 가능성 있음.
+
+5. Materialize CSS
+    - 구글 Material Design 스타일도 전역 적용.
+    - HTML 기본 요소들의 스타일이 변함.
+
+6. normalize.css / reset.css / sanitize.css
+    - 라이브러리는 아니지만, 전역 리셋.
+    - `<h1>`, `<p>`, `<ul>` 등의 기본 마진/패딩이 전부 변경됨.
+    - 앱 전체 레이아웃에 영향을 주므로 반드시 상위 레벨에서만 사용해야 함.
+
+- #대부분 프론트앤드 개발에 React와 같은 프레임워크를 사용하지 않던 때부터 광범위하게 사용되어 오던 CSS 프레임워크 들입니다.
+
+### Bootstrap 실습 (외부 스타일 시트)
+
+- #따라서 이러한 CSS 프레임워크를 사용하는 경우는 반드시 top-level layout에서만 사용 해야 합니다.
+
+- #즉, Tailwind 등 다른 프레임워크와 함께 사용하지 않는 것이 바람직합니다.
+
+### 5. 순서 지정 및 병합
+
+- Next.js는 프로덕션 빌드 중에 스타일시트를 자동으로 청크(병합)하여 CSS를 최적화합니다.
+
+- CSS의 순서는 코드에서 스타일을 가져오는 순서에 따라 다릅니다.
+
+- 예를 들어, `<BaseButton>`이 `page.module.css`보다 먼저 import되기 때문에 `base-button.module.css`가 `page.module.css`보다 먼저 요청됩니다.
+
+```typescript
+// page.tsx
+
+import { BaseButton } from './base-button'
+import styles from './page.module.css'
+
+export default function Page() {
+  return <BaseButton className={styles.primary} />
+}
+```
+
+### 실습
+
+- #먼저 base-button.module.css와 page.module.css를 만들어 줍니다.
+
+- #스타일은 자유롭게 하고, 구분이 쉽게 background-color 정도만 다르게 선언합니다.
+
+```css
+/* src > app > blog4 > base-button.module.css */
+.primary {
+  background-color: #af4c4c;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+}
+```
+- 다음으로 blog4 페이지와 BaseButton 컴포넌트를 문서에 나와 있는 코드를 이용하여 작성합니다.
+- 하지만 문서의 코드를 그대로 이용하면 다음과 같은 오류가 발생합니다.
+
+```
+<BaseButton className={styles.primary} />
+
+// Type '{ className: string; }' is not assignable to type 'IntrinsicAttributes'.
+// Property 'className' does not exist on type 'IntrinsicAttributes'. ts(2322)
+```
+
+### 실습
+
+- #이 오류는 BaseButton 컴포넌트에 props를 받는 구문이 없는데, page에서 props로 className을 전달하고 있기 때문에 발생합니다.
+
+- #이 문제를 해결하려면 다음과 같이 수정해 주면 됩니다.
+
+```typescript
+// src > app > blog4 > BaseButton.tsx > BaseButton
+import styles from './base-button.module.css';
+
+type BaseButtonProps = {
+  className?: string
+}
+
+export function BaseButton({ className }: BaseButtonProps) {
+  return (
+    <button className={`${styles.primary} ${className ?? ''}`} />
+  );
+}
+```
+- 이제 결과를 확인해 보세요.
+- 뭔가 이상하지 않나요? 문서에서는 분명 "base-button.module.css이 먼저 요청된다"고 했는데 결과는 page.module.css가 적용되니까요.
+
+### 실습
+
+- #이 것은 문서의 설명 부족에서 오는 오해 입니다.
+
+- #"먼저 요청"한 것이지, "먼저 적용"된다는 의미가 아닙니다.
+
+- #CSS의 적용 순서가 기억 나나요?
+
+- #CSS는 HTML 태그에 가까울 수록 먼저 적용됩니다.
+
+- #그렇다면 class에서는 어떨까요?
+
+- #class도 중복 선언이 가능합니다. 예를 들어 class='foo bar'처럼 여러 개의 class를 사용할 수 있습니다.
+
+- #여기서 foo와 bar가 다른 class이기 때문에 두 가지 스타일이 모두 적용됩니다.
+
+- #그러나 예제에서는 다른 스타일 파일에서 같은 이름의 primary class를 가져옵니다.
+
+### 실습
+
+- HTML에서는 다른 스타일 파일에서 같은 이름의 primary class를 가져올 수 없습니다.
+
+- 그러나 Next.js에서는 class 이름이 중복되는 경우, 번들하는 과정에서 class 이름 앞에 파일이름 등으로 구분해 줍니다.
+
+- 이런 기능 때문에 같은 이름의 class도 사용할 수 있습니다.
+
+- 이렇게 내용이 같은 class인 경우 마지막 class의 스타일이 적용됩니다.
+
 ## 11월 12일 수업내용
 ### 3. 스트리밍
 
