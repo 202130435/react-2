@@ -1,5 +1,712 @@
 # React2
 # 202130435 허동민
+## 11월 26일 수업내용
+### CSS 순서를 예측 가능하게 유지하려면:
+
+- CSS 가져오기를 단일 JavaScript 또는 TypeScript 항목 파일에 포함하려고 시도합니다.
+- 애플리케이션 루트에 글로벌 스타일과 Tailwind 스타일시트를 가져옵니다.
+- Tailwind CSS는 유틸리티 클래스를 사용하여 일반적인 디자인 패턴을 다루므로 대부분의 스타일링 요구 사항에 적합합니다.
+- Tailwind 유틸리티가 충분하지 않은 경우 구성 요소별 스타일에 CSS 모듈을 사용하세요.
+- CSS 모듈에는 일관된 명명 규칙을 사용하세요. 예를 들어, <name>.module.cssover <name>.tsx.
+- 중복된 가져오기를 방지하기 위해 공유 스타일을 공유 구성 요소로 추출합니다.
+- ESLint와 같이 가져오기를 자동으로 정렬하는 linter 또는 포맷터를 끕니다.sort-imports.
+- 이 cssChunking옵션을 사용하면 next.config.jsCSS가 어떻게 청크화되는지 제어할 수 있습니다
+
+### 7. 개발 vs 프로덕션
+
+- 개발 중(`next dev`)에는 **Fast Refresh(빠른 새로 고침)**로 CSS 업데이트가 즉시 적용됩니다.
+
+- 프로덕션 환경(`next build`)에서는 모든 CSS 파일이 자동으로 여러 개의 압축(`minify` / `*.min.css`) 및 코드 분할된 `.css` 파일로 연결되어, **각 경로에 최소한의 CSS만 로드되도록 보장합니다.**
+
+- 프로덕션 환경에서는 **자바스크립트가 비활성화된 상태에서도 CSS가 로드되지만**, 개발 환경에서는 **Fast Refresh**를 위해 자바스크립트가 필요합니다.
+
+- 개발 환경에서는 CSS 순서가 다르게 동작할 수 있기 때문에, **최종 CSS 순서를 확인하려면 항상 빌드(`next build`)를 확인합니다.**
+
+### Next Steps → Guides
+
+- 애플리케이션에서 CSS를 사용할 수 있는 대체 방법에 대해 자세히 알아보세요.
+
+- **Tailwind CSS v3** : Tailwind CSS v3를 사용하여 더 넓은 브라우저 지원을 위해 Next.js 애플리케이션을 스타일링하세요.
+
+- **Sass** : Sass를 사용하여 Next.js 애플리케이션의 스타일을 지정하세요.
+
+- **CSS-in-JS** : Use CSS-in-JS libraries with Next.js
+
+### 1. 이미지 최적화
+
+#### 1-1. 이미지 최적화
+
+- The Next.js `<Image>` 컴포넌트는 HTML `<img>`요소를 확장하여 제공합니다.
+
+- **크기 최적화** : 각 기기에 맞게 자동으로 **적절한 크기의 이미지를 제공**하며, **WebP**와 같은 최신 이미지 형식을 사용합니다.
+
+- **시각적 안정성** : 이미지 로딩 시 **레이아웃 이동(layout shift)**을 자동으로 방지합니다.
+
+- **더 빠른 페이지 로드** : **기본 브라우저 지연 로딩(native browser lazy loading)**을 사용하여 **뷰포트**에 들어갈 때만 **이미지를 로드**하며, **선택적 흐리게 표시되는 placeholder**를 제공합니다.
+
+- **자산(Asset) 유연성** : 원격 서버에 저장된 이미지도 **원하는 대로 이미지 크기를 조정**할 수 있습니다.
+
+- `<Image>`를 사용하려면 `next/image`에서 **import**하여 컴포넌트 내에서 렌더링에 사용합니다.
+
+```typescript
+// app/page.tsx
+
+import Image from 'next/image'
+
+export default function Page() {
+  return <Image src="" alt="" />
+}
+```
+
+### 1. 이미지 최적화
+
+- `src` 속성은 로컬 또는 원격 이미지가 될 수 있습니다.
+
+> **💡 영상 자료**
+>
+> next/image 사용법 자세히 알아보기 → **YouTube (9분)**
+
+### WebP 파일의 특징
+
+- **WebP**는 **효율적인 압축**으로 파일 크기가 작고, **손실 및 무손실 압축**을 지원하며, **투명도(알파 채널) 및 애니메이션 기능**을 지원합니다.
+
+- 이러한 특징을 통해 **웹 페이지 로딩 속도를 향상**시키고, **대역폭 사용량**을 줄일 수 있으며, JPEG, PNG, GIF 등 **기존 이미지 형식의 장점을 한 번에 포함**할 수 있습니다.
+
+#### [ WebP의 장점 ]
+
+- 파일 크기가 작아 **웹사이트 로딩 속도를 개선**합니다.
+
+- **데이터 전송 속도**를 높이고 **저장 공간을 절약**할 수 있습니다.
+
+- 기존 이미지 형식의 단점을 보완하여 **고품질 이미지**를 효율적으로 표현할 수 있습니다.
+
+### WebP 파일의 특징
+
+#### [ 주요 특징 ]
+
+- **뛰어난 압축률** : **JPEG보다 약 25~34%** 더 작은 파일 크기로 동일한 품질을 제공하며, 무손실 압축 시 **PNG보다 약 26%** 더 작습니다.
+
+- **다양한 압축 방식** : **손실 및 무손실 압축**을 모두 지원하기 때문에 이미지 품질과 파일 크기 사이의 균형을 맞출 수 있습니다.
+
+- **투명도(알파 채널) 지원** : **투명도를 지원하여 PNG의 장점을 계승**합니다.
+
+- **애니메이션 지원** : GIF처럼 **애니메이션을 지원**하면서 파일 크기는 **약 64% 더 작게** 만들 수 있습니다.
+
+- **웹 최적화** : 웹 사이트의 로딩 속도를 향상시키기 위해 **구글이 개발한 형식**으로, 웹 페이지 성능 개선에 최적화되어 있습니다.
+
+### 1. 이미지 최적화
+
+#### 1-2. 로컬 이미지
+
+- **정적 파일(이미지, 폰트 등)**은 루트 디렉토리의 `public` 디렉토리에 저장할 수 있습니다.
+
+- `public` 디렉토리 내의 파일은 **기본 URL(/)**을 시작으로 코드에서 참조할 수 있습니다.
+
+
+
+#### [실습1] blog 라우팅 페이지를 만들고, 문서 코드에서 몇 가지만 수정해서 작성 합니다.
+
+- 현재 `public`에 있는 이미지 중에서 `profile.png`는 없습니다.
+
+- 실습을 위해 **공유된 png 파일**을 다운 받아 사용했습니다.
+
+- 만일 브라우저를 **다크 모드**로 사용 중이라면 `dark:invert` 클래스를 추가해 줍니다.
+
+- 그리고 `width`와 `height` 프로퍼티는 **반드시 입력**해 주어야 합니다. (Next.js v13 이상)
+
+- `RootLayout`에 네비게이션도 추가 합니다.
+
+```tsx
+// src/app/blog/page.tsx
+
+import Image from 'next/image'
+
+export default function Page() {
+  return (
+    <Image
+      className="dark:invert"
+      src="/nextjs.png"
+      alt="Picture of the author"
+      width={360}
+      height={218}
+    />
+  )
+}
+```
+
+### 1. 이미지 최적화
+
+- 이미지가 정적으로 `import`된 경우 Next.js는 자동으로 본질적인 **너비(width)**와 **높이(height)**를 결정합니다.
+
+- 이 값들은 이미지 비율을 결정하고, 이미지 로딩 중 **CLS(Cumulative Layout Shift)**를 방지하는 데 사용됩니다.
+
+#### [실습2] 이번 실습은 import 방식으로 이미지를 사용하는 방법입니다.
+
+- `import` 방식을 사용할 경우는 `public`을 인식하지 못합니다.
+
+- 따라서 `src/images/` 디렉토리를 만들고 그곳에 이미지를 저장해서 사용합니다.
+
+- 실습1에서 사용한 `blog` 페이지에 `import` 방식으로 코드를 추가합니다.
+
+- 완성 코드는 뒤에서 확인합니다.
+
+- 작성이 끝나면 **개발자 도구(DevTools)**를 통해서 **두가지 방식의 차이점**에 관해서 살펴보도록 합니다.
+
+### 완성된 코드
+``` tsx
+import Image from 'next/image'
+import NestJsLogo from '@/images/nextjs.png'
+
+export default function Page() {
+  return (
+    <>
+      {/* 로컬 경로 사용 (width, height 필수) */}
+      <Image
+        className="dark:invert"
+        src="/nextjs.png"
+        alt="Picture of the author"
+        width={360}
+        height={218}
+      />
+      
+      {/* Import 방식 사용 (width, height 자동 설정) */}
+      <Image
+        className="dark:invert"
+        src={NestJsLogo}
+        alt="Picture of the author"
+      />
+    </>
+  )
+}
+```
+
+### import 이미지 vs public 이미지
+
+- Next.js의 핵심 기능 중 하나인 **자동 이미지 최적화**의 혜택을 최대한 누리려면 **Import 방식**을 우선적으로 고려해야 합니다.
+
+- Next.js 공식 문서에서 **가장 강력하게 권장하는 방식**입니다.
+
+<br/>
+
+- 대부분의 로컬 이미지에 이 방식을 사용하는 것이 가장 좋습니다.
+
+- **컴포넌트 내에서 사용하는 모든 이미지** : UI 요소, 배경 이미지, 로고 등.
+
+- **빌드 타임에 경로가 확정된 이미지** : 소스 코드와 함께 빌드 되어야 하는 정적인 이미지 파일.
+
+- **최적화와 성능이 가장 중요한 이미지** : Next.js가 **자동으로 WebP 변환, 지연 로딩, 다양한 화면 크기에 맞는 이미지 생성(srcset)** 등을 적용하여, **CLS(Cumulative Layout Shift)**를 효과적으로 방지할 수 있습니다.
+
+### import 이미지 vs public 이미지
+
+- **Public 디렉토리 방식**의 사용 시점은 다음과 같습니다.
+
+- **웹 루트에서 직접 접근해야 하는 파일** :
+  - `favicon.ico`, `robots.txt`, `manifest.json` 등 메타 파일.
+  - 외부 스크립트나 서비스(예: **웹 크롤러**, **SEO 도구**)가 웹 루트(/)에서 직접 접근해야 하는 파일.
+
+- **경로 문자열이 필요한 경우** :
+  - **동적으로 경로를 구성해야 할 때.**
+    (예: 서버 API 응답에 따라 이미지 경로가 달라지는 경우).
+  - **정적인 URL이 필요한 경우.**
+    (예: CMS나 데이터베이스에 저장된 이미지를 Next.js가 아닌 다른 곳에서 참조해야 할 때).
+  - CSS 파일에서 **배경 이미지**로 사용할 때. (Import 방식은 CSS에서 사용하기 어려움).
+
+- **`<Image>` 컴포넌트를 사용할 수 없는 경우** : 일반 `<img>` 태그를 사용해야 하는 특수한 상황. 이 경우 **성능 최적화는 포기**해야 합니다.
+
+### import 이미지 vs public 이미지
+
+정리하면 ...
+
+#### [ Static Import 방식 ]
+
+- **99%의 이미지**에서 이 방식을 사용합니다.
+
+- 로고, 아이콘, 포스트 썸네일, 상품 이미지, 히어로 이미지 등 앱 안에 표시되는 **거의 모든 정적 이미지는 무조건 Static Import 방식을 사용합니다.**
+  → **성능 차이**가 비교가 되지 않을 만큼 크게 납니다.
+
+<br/>
+
+#### [ public 디렉토리 이용 방식 ]
+
+- public 디렉토리 이용 방식은 **꼭 필요한 예외적인 경우**에만 사용합니다.
+
+- `favicon.ico`, `robots.txt`, `manifest.json` 등의 정적 파일일 때 사용합니다.
+
+- **OG 이미지**, **Twitter Card**, **메타 이미지**가 필요할 때 사용합니다.
+
+- 사용자 업로드 이미지나, CMS에서 런타임에 경로가 결정되는 이미지 처리가 필요할 때
+
+### 1. 이미지 최적화
+
+- 원격 서버의 이미지를 **안전하게 허용**하려면, `next.config.js`에서 **허용되는 URL 패턴 목록을 정의**해야 합니다.
+
+- 악의적인 사용을 방지하기 위해 **가능한 한 구체적으로 지정**하십시오.
+
+- 예를 들어, 다음 구성은 **특정 AWS S3 버킷의 이미지만 허용**합니다:
+
+```typescript
+// next.config.ts
+
+import type { NextConfig } from 'next'
+
+const config: NextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 's3.amazonaws.com',
+        port: '',
+        pathname: '/my-bucket/**',
+        search: '',
+      },
+    ],
+  },
+}
+
+export default config
+```
+
+### 1. 이미지 최적화
+
+#### [ API Reference ]
+
+- Next.js Image의 전체 기능 세트는 API Reference를 참고하세요.
+
+- **이미지 컴포넌트** : 내장된 'next/image' 컴포넌트를 사용하여 Next.js 애플리케이션에서 이미지를 최적화합니다.
+
+### 2. 폰트 최적화
+
+#### 2-1. 폰트 최적화
+
+- `next/font` 모듈은 자동으로 글꼴을 최적화하고, **외부 네트워크 요청을 제거**하여, **개인 정보 보호와 성능을 향상**시킵니다.
+
+- 이 모듈은 **모든 글꼴 파일에 대한 자체 호스팅 기능**이 내장되어 있습니다.
+
+- 즉, **레이아웃 이동 없이** 웹 글꼴을 **최적의 상태로 로드** 할 수 있습니다.
+
+- `next/font` 사용을 시작하려면, 먼저 `next/font/local` 또는 `next/font/google`에서 **import**하고, **적절한 옵션과 함께 함수처럼 호출**하여 사용합니다.
+
+- 글꼴을 적용할 때는 **엘리먼트의 className을 이용하여 설정**합니다.
+
+```typescript
+// app/layout.tsx
+
+import { Geist } from 'next/font/google'
+
+const geist = Geist({
+  subsets: ['latin'],
+})
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en" className={geist.className}>
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+### 2. 폰트 최적화
+
+- 폰트는 **사용되는 컴포넌트에 맞게 스코프가 지정**되어 있습니다.
+
+- 전체 애플리케이션에 폰트를 적용하려면 **Root Layout**에 글꼴을 추가합니다.
+
+### 2. 폰트 최적화
+
+#### 2-2. Google 글꼴
+
+- **모든 Google 글꼴**을 자동으로 **자체 호스팅**할 수 있습니다.
+
+- 글꼴은 **정적 assets**으로 저장되며, 배포와 동일한 도메인에서 제공되므로 사용자가 사이트를 방문할 때 **브라우저에서 Google에 요청을 보내지 않습니다.**
+
+- Google 글꼴을 사용하려면 다음에서 선택한 글꼴을 가져옵니다.
+
+`next/font/google` :
+
+```typescript
+// app/layout.tsx
+
+import { Geist } from 'next/font/google'
+
+const geist = Geist({
+  subsets: ['latin'],
+})
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en" className={geist.className}>
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+### 2. 폰트 최적화
+
+- 최상의 성능과 유연성을 위해 **가변 폰트(variable fonts)** 사용을 권장합니다. 그러나 가변 글꼴을 사용할 수 없는 경우, `weight`를 지정해야 합니다.
+
+```typescript
+// app/layout.tsx
+
+import { Roboto } from 'next/font/google'
+
+const roboto = Roboto({
+  weight: '400',
+  subsets: ['latin'],
+})
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en" className={roboto.className}>
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+### 2. 폰트 최적화
+
+#### 2-3. 로컬 글꼴
+
+- 로컬 글꼴을 사용하려면 `next/font/local`에서 글꼴을 import한 후 로컬 글꼴 파일의 **`src`를 지정**합니다.
+
+- 글꼴은 **`public` 디렉토리에 저장**하거나, **`app` 디렉토리 내부에 함께 배치**할 수 있습니다.
+
+- 예를 들어:
+
+```typescript
+// app/layout.tsx
+
+import localFont from 'next/font/local'
+
+const myFont = localFont({
+  src: './my-font.woff2',
+})
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en" className={myFont.className}>
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+### 2. 폰트 최적화
+
+#### [ API Reference ]
+
+- Next.js Font의 전체 기능 세트는 API Reference를 참고하십시오.
+
+- **글꼴** : 내장된 'next/font' **로더**를 사용하여 웹 글꼴 로드를 최적화합니다.
+
+### 보충 설명 - next/font/google
+
+- `next/font/google`은 구글 폰트를 최적화해서 사용할 때 `import` 합니다.
+
+- 폰트는 구글 폰트 사이트에서 **마음에 드는 것을 고르면 되지만 한가지 문제가 있습니다.**
+
+- **폰트의 이름이 한 단어로 되어 있는 경우라면 정상으로 동작합니다.**
+
+- 그러나 이름이 **여러 단어로 되어 있는 경우는 `snake_case`를 사용합니다.**
+
+- **그럼에도 정상 동작을 하지 않을 때는 다운로드 받아 `local`에서 사용해야 합니다.**
+
+### 보충 설명 - next/font/local
+
+- `next/font/local`는 프로젝트 안에 저장된 로컬 폰트 파일을 사용할 때 `import` 합니다.
+
+- **`public` 폴더 안의 폰트를 읽을 수 없습니다.**
+
+- 이유는 `next/font/local`은 실제 파일 경로(**파일 시스템 경로**)를 필요로 하고, `public/`은 **URL 기반(static asset 위치)**이기 때문에 서로 맞지 않아 오류가 나게 됩니다.
+
+- 따라서 로컬 폰트는 **`src/` 아래에 있어야 합니다.**
+
+```text
+src/
+  ├── app/
+  │    └── page.tsx
+  └── fonts/
+       └── foo.woff2
+```
+
+### 보충 설명 - next/font/local
+
+- **지원하는 폰트의 포맷은 다양합니다.** .woff2 / .woff / .ttf / .otf 등
+
+- 다만 **woff2를 추천합니다.** 추천하는 이유는 다음과 같습니다.
+  - 가장 가볍고
+  - 압축 효율 최고
+  - 브라우저 지원율 최고
+  - Next.js도 자동 최적화 시 가장 잘 작동함
+
+- 다른 포맷의 폰트는 변환 하여 사용합니다. https://cloudconvert.com/
+
+### 구글폰트 사용 실습
+
+- `font.google.com`에 방문하여 원하는 글꼴을 선택합니다.
+  - 다른 폰트와 구분을 확실히 하기위해, **펜 글꼴을 사용합니다.**
+
+- 여러 단어로 되어 있는 글꼴을 사용한 것은 한 단어로 된 글꼴을 바로 사용하면 되지만 **여러 단어로 된 글꼴은 `snake_case`를 사용합니다.**
+
+- 문서에서는 `RootLayout` 파일에 구현하였으나, 실습에서는 **`blog2` 페이지를 만들고 다음 코드를 작성합니다.**
+
+```tsx
+// src/app/blog2/page.tsx
+
+import { Nanum_Pen_Script } from 'next/font/google'
+
+const geist = Nanum_Pen_Script({
+  subsets: ['latin'],
+  weight: '400'
+});
+
+export default function Blog2Page() {
+  return (
+    <main className="p-8">
+      <h2 className="text-3xl font-semibold mb-4" >Welcome to Blog2 Page</h2>
+      <p className={`p-4 text-4xl ${geist.className}`}>한글 나눔 펜 스크립트 폰트가 적용된 블로그2 페이지입니다.</p>
+    </main>
+  );
+}
+```
+
+### Deploying(배포)
+
+- Next.js는 Node.js 서버, Docker 컨테이너, 정적 내보내기 형태로 배포하거나 다양한 플랫폼에서 실행되도록 조정할 수 있습니다.
+
+| 배포 옵션 | 기능 지원 |
+| :--- | :--- |
+| **Node.js 서버** | 모두 |
+| **도커 컨테이너** | 모두 |
+| **정적 내보내기** | 제한된 |
+| **어댑터** | 플랫폼별 |
+
+#### 1. Node.js 서버
+
+- Next.js는 **Node.js를 지원하는 모든 제공업체**에 배포할 수 있습니다.
+
+- `package.json` 파일에 `"build"` 및 `"start"` 스크립트가 포함되어 있는지 확인합니다.
+
+```json
+// package.json
+
+{
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  }
+}
+```
+
+### Deploying(배포)
+
+- 그 다음 `npm run build`를 실행하여 애플리케이션을 빌드하고, `npm run start`를 실행하여 Node.js 서버를 시작합니다.
+
+- Node.js 서버는 모든 Next.js 기능을 지원합니다.
+
+- 필요한 경우 **사용자 지정 서버**로 eject 할 수도 있습니다.
+
+- Node.js 배포는 **모든 Next.js 기능을 지원합니다.**
+
+- 인프라에 맞게 **구성하는 방법**을 알아보세요.
+
+#### [ Templates ]
+
+- **Flightcontrol**
+
+- **Railway**
+
+- **Replit**
+
+### Deploying(배포)
+
+- **eject to a custom server(사용자 지정 서버로 이젝트)**의 의미는 다음과 같습니다.
+  → Next.js가 기본적으로 제공하는 서버 동작 방식을 버리고, 직접 Node.js 서버(**Express**, **Fastify** 등)를 만들어 Next.js를 여기에 붙여 사용하는 것을 의미합니다.
+
+- **eject**란 표현은 **CRA(Create React App)**에서 사용하기 시작한 표현입니다.
+  → 자동으로 제공되는 내부 설정을 포기하고, 모든 것을 직접 컨트롤하는 상태로 나오는 것을 의미합니다.
+
+<br/>
+
+- **Next.js**에서도 비슷한 의미로 쓰입니다.
+  - 기본적으로 **Next.js는 자체 서버(next start)가 있고**,
+  - 이 서버는 라우팅, 정적 파일 서빙, **캐싱**, 빌트인 최적화 등을 처리해 줍니다.
+  - 하지만 특수한 기능이 필요하면 이 기본 서버를 **"버리고(eject)"** 스스로 Node.js 서버를 만드는 것입니다.
+
+### Deploying(배포)
+
+#### 왜 eject(커스텀 서버)가 필요할까?
+
+1) **Next.js 기본 서버로는 할 수 없는 서버 기능이 필요할 때**
+   - WebSocket 직접 제어 (Socket.IO)
+   - 특정 서버 미들웨어가 필요할 때
+   - 복잡한 프록시/라우팅 동작이 필요할 때
+
+2) **Next.js의 라우팅/서버 구조를 내가 직접 다루고 싶은 경우**
+   - 하지만 **Next.js 13 이후에는 커스텀 서버 사용이 거의 필요 없어졌습니다.**
+
+<br/>
+
+- 문서에서 "가능하지만 권장하지 않는다"는 이유는 다음과 같습니다.
+
+- 그 이유는 **많은 Next.js 기능을 사용할 수 없게 만들거나, 성능 최적화가 깨질 수 있기 때문입니다.**
+
+  - Edge Functions 사용 불가.
+  - Static Optimization 불가.
+  - Middleware 작동 방식 제한.
+  - **Vercel** 배포 시 문제 생김.
+
+### 2. Docker
+
+- Next.js는 **Docker 컨테이너**를 지원하는 모든 제공업체에 배포할 수 있습니다.
+
+- 여기에는 Kubernetes와 같은 컨테이너 **오케스트레이터나** Docker를 실행하는 클라우드 제공업체가 포함됩니다.
+
+- Docker 배포는 **모든 Next.js 기능**을 지원합니다.
+
+- 인프라에 맞게 **구성하는 방법**을 알아보세요.
+
+<br/>
+
+- **개발 참고사항:**
+
+- Docker는 프로덕션 배포에 탁월하지만, Mac 및 Windows 환경에서 개발 시 성능 향상을 위해 Docker 대신 로컬 개발(`npm run dev`)을 사용하는 것을 고려하십시오.
+
+- **로컬 개발 최적화**에 대해 **자세히 알아보세요**.
+
+### Deploying(배포)
+
+#### [ Templates ]
+
+- Docker
+
+- Docker Multi-Environment
+
+- DigitalOcean
+
+- Fly.io
+
+- Google Cloud Run
+
+- Render
+
+- SST
+
+- 링크는 문서를 참고하세요.
+
+### 3. 정적 내보내기(Static export)
+
+- Next.js는 정적 사이트 또는 **SPA(Single-Page Application)**으로 시작할 수 있으며, 이후 서버가 필요한 기능을 사용하기 위해 선택적으로 업그레이드할 수 있습니다.
+
+- Next.js는 **정적 내보내기**를 지원하므로 HTML/CSS/JS 정적 자산을 제공할 수 있는 모든 웹 서버에 배포 및 호스팅할 수 있습니다.
+
+- 이런 호스팅에는 AWS S3, Nginx 또는 Apache와 같은 도구가 포함됩니다.
+
+- **정적 내보내기**로 실행하는 경우 서버가 필요한 Next.js 기능은 지원되지 않습니다. **자세히 알아보기**.
+
+#### [ Templates ]
+
+- **GitHub Pages**
+
+### 4. Adapters (Next.js 기능을 지원하는 호스팅)
+
+- Next.js는 다양한 플랫폼에서 실행되도록 조정되어 각 플랫폼의 인프라 기능을 지원할 수 있습니다.
+
+- 지원되는 Next.js 기능에 대한 정보는 각 제공업체의 문서를 참조하십시오.
+
+- **AWS Amplify Hosting**
+
+- **Cloudflare**
+
+- **Deno Deploy**
+
+- **Netlify**
+
+- **Vercel**
+
+#### [ 참고 ]
+
+- 모든 플랫폼에서 채택할 **배포 어댑터 API**를 개발 중입니다. # Next.js에 포함될 예정.
+
+- 완료 후에는 자체 어댑터를 작성하는 방법에 대한 문서를 추가할 예정입니다.
+
+### Vercel의 Next.js (Vercel 배포)
+
+- Next.js는 **Vercel**에서 유지 관리하는 웹을 위한 **풀스택** React 프레임워크입니다.
+
+- Next.js는 셀프 호스팅 방식으로 작동하지만 **Vercel**에 배포할 경우 구성이 전혀 필요 없으며 확장성, 가용성, 성능을 전반적으로 향상시킵니다.
+
+#### [ Getting started ]
+
+- Next.js 프로젝트가 이미 있다면, **Vercel CLI**를 설치하고 프로젝트 루트 디렉터리에서 `vercel` 명령어를 실행합니다.
+
+- 아래 버튼을 사용하여 Next.js 예제 저장소 중 하나를 원하는 git 제공자로 복제한 후 **Vercel**에 배포하세요.
+
+### Vercel의 Next.js (Vercel 배포)
+
+- Next.js 는 **Vercel**에서 유지 관리하는 웹을 위한 **풀스택** React 프레임워크입니다.
+
+- Next.js는 셀프 호스팅 방식으로 작동하지만 **Vercel**에 배포할 경우 구성이 전혀 필요 없으며 확장성, 가용성, 성능을 전반적으로 향상시킵니다.
+
+#### [ Getting started ]
+
+- Next.js 프로젝트가 이미 있다면, **Vercel CLI**를 설치하고 프로젝트 루트 디렉터리에서 `vercel` 명령어를 실행합니다.
+
+- 아래 버튼을 사용하여 Next.js 예제 저장소 중 하나를 원하는 git 제공자로 복제한 후 **Vercel**에 배포하세요.
+
+### Vercel의 Next.js (Vercel 배포)
+
+- 문서에는 우리가 한학기 동안 학습한 내용이 간단히 정리되어 있습니다.
+
+- 증분 정적 재생성(ISR)
+
+- 서버 측 렌더링(SSR)
+
+- 스트리밍(Streaming)
+
+- 부분 사전 렌더링(Partial Prerendering)
+
+- 이미지 최적화(Image Optimization)
+
+- 글꼴 최적화(Font Optimization)
+
+- 오픈 그래프 이미지(Open Graph Images)
+
+#### [ 그 밖의 서비스에 관한 내용 ]
+
+- 나머지 내용은 **Vercel**에서 제공하는 다양한 서비스 입니다.
+
+### Vercel의 Next.js (Vercel 배포)
+
+- **서비스 통합(Service integrations)** :
+
+- **Vercel**은 MongoDB, Sanity 등 인기 서비스 제공업체와 파트너십을 맺고 Next.js와 이러한 서비스를 더욱 쉽게 연동할 수 있도록 했습니다.
+
+- 상거래 , 데이터베이스 , 로깅 등 다양한 분야에 걸쳐 다양한 연동 기능을 제공합니다.
+
+
+
+
+
+
+
+
+
 ## 11월 19일 수업내용
 ### introduction
 
